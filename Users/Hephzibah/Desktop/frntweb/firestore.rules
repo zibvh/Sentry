@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth()    { return request.auth != null; }
+    function uid()       { return request.auth.uid; }
+    function userDoc()   { return get(/databases/$(database)/documents/users/$(uid())); }
+    function role()      { return userDoc().data.role; }
+    function isAdmin()   { return isAuth() && role() == "admin"; }
+    function isTutor()   { return isAuth() && role() == "tutor"; }
+    function isStudent() { return isAuth() && role() == "student"; }
+    function isActive()  { return userDoc().data.status == "active"; }
+
+    match /users/{userId} {
+      allow create: if isAuth() && uid() == userId;
+      allow read, update: if isAuth() && (uid() == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /courses/{courseId} {
+      allow read: if resource.data.status == "live"
+                  || (isAuth() && (isAdmin() || resource.data.tutorId == uid()));
+      allow create: if isTutor() && isActive();
+      allow update: if isAdmin() || (isTutor() && resource.data.tutorId == uid());
+      allow delete: if isAdmin() || (isTutor() && resource.data.tutorId == uid());
+    }
+
+    match /courses/{courseId}/lessons/{lessonId} {
+      allow read: if isAdmin()
+                  || (isTutor() && get(/databases/$(database)/documents/courses/$(courseId)).data.tutorId == uid())
+                  || isStudent();
+      allow write: if isTutor()
+                   && get(/databases/$(database)/documents/courses/$(courseId)).data.tutorId == uid();
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read: if isAuth() && (
+        isAdmin() ||
+        resource.data.studentId == uid() ||
+        resource.data.tutorId == uid()
+      );
+      allow create: if isStudent() && isActive() && request.resource.data.studentId == uid();
+      allow update: if isAdmin() || resource.data.studentId == uid();
+      allow delete: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if isAdmin()
+                  || resource.data.studentId == uid()
+                  || isTutor();
+      allow create: if isStudent() && request.resource.data.studentId == uid();
+      allow update: if isTutor() || (isStudent() && resource.data.grade == null);
+      allow delete: if isAdmin();
+    }
+
+    match /testResults/{resultId} {
+      allow read: if isAdmin() || resource.data.studentId == uid() || isTutor();
+      allow create: if isStudent() && request.resource.data.studentId == uid();
+      allow update, delete: if isAdmin();
+    }
+
+    match /certificates/{certId} {
+      allow read:   if true;
+      allow create: if isAuth();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || resource.data.studentId == uid();
+      allow create: if isAuth() && request.resource.data.studentId == uid();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

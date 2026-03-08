@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>frNtcOda — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#0A1F6E; --blue-mid:#1338BE; --blue-glow:#2B6BFF;
+  --red:#D90429; --red-bright:#FF0A35;
+  --white:#FFFFFF; --dark:#060D2B; --dark2:#0D1845; --dark3:#111C50;
+  --surface:rgba(255,255,255,0.03); --border:rgba(255,255,255,0.08);
+  --gray:#8A94B8; --gray2:#4A5378;
+  --green:#22C55E; --amber:#F59E0B; --orange:#F97316;
+  --mono:'DM Mono',monospace; --display:'Syne',sans-serif; --body:'Outfit',sans-serif;
+  --sidebar:240px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--body);background:var(--dark);color:var(--white);display:flex;min-height:100vh;overflow-x:hidden;cursor:none;}
+
+/* CURSOR */
+.cursor{width:10px;height:10px;background:var(--red-bright);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .2s,height .2s;}
+.cursor-ring{width:30px;height:30px;border:1.5px solid rgba(255,10,53,0.4);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .25s,height .25s,border-color .25s;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;transition:transform .3s;}
+.sidebar-logo{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border);}
+.logo{font-family:var(--display);font-size:1.4rem;font-weight:800;letter-spacing:-0.03em;color:var(--white);text-decoration:none;}
+.logo span{color:var(--red-bright);}
+.logo-sub{font-family:var(--mono);font-size:0.62rem;color:var(--gray);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2rem;}
+
+.sidebar-nav{flex:1;padding:1rem 0;overflow-y:auto;}
+.nav-section-label{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray2);padding:0.75rem 1.25rem 0.4rem;}
+.nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1.25rem;font-size:0.875rem;color:var(--gray);text-decoration:none;cursor:none;transition:all .2s;position:relative;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--white);background:rgba(255,255,255,0.04);}
+.nav-item.active{color:var(--white);background:rgba(43,107,255,0.1);border-left-color:var(--blue-glow);}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--red);color:var(--white);font-family:var(--mono);font-size:0.6rem;padding:0.15rem 0.45rem;border-radius:10px;font-weight:500;}
+
+.sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);}
+.admin-pill{display:flex;align-items:center;gap:0.75rem;}
+.admin-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red-bright));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:0.8rem;flex-shrink:0;}
+.admin-info{flex:1;min-width:0;}
+.admin-name{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.admin-role{font-family:var(--mono);font-size:0.62rem;color:var(--red-bright);letter-spacing:0.08em;}
+.logout-btn{background:none;border:none;cursor:none;color:var(--gray);font-size:0.9rem;transition:color .2s;}
+.logout-btn:hover{color:var(--red-bright);}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{height:64px;background:rgba(6,13,43,0.9);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:40;}
+.topbar-left{display:flex;align-items:center;gap:1rem;}
+.page-title{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:-0.02em;}
+.breadcrumb{font-family:var(--mono);font-size:0.7rem;color:var(--gray);letter-spacing:0.05em;}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.topbar-date{font-family:var(--mono);font-size:0.72rem;color:var(--gray);}
+.notif-btn{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:none;font-size:1rem;transition:border-color .2s;}
+.notif-btn:hover{border-color:rgba(43,107,255,0.4);}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--red-bright);border-radius:50%;border:1.5px solid var(--dark2);}
+
+/* CONTENT */
+.content{flex:1;padding:2rem;overflow-y:auto;}
+
+/* PANELS */
+.panel{display:none;}
+.panel.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2rem;}
+.stat-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;transition:border-color .3s,transform .2s;}
+.stat-card:hover{border-color:rgba(43,107,255,0.3);transform:translateY(-2px);}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.blue::after{background:linear-gradient(90deg,var(--blue-mid),var(--blue-glow));}
+.stat-card.red::after{background:linear-gradient(90deg,var(--red),var(--red-bright));}
+.stat-card.green::after{background:linear-gradient(90deg,#16a34a,var(--green));}
+.stat-card.amber::after{background:linear-gradient(90deg,#d97706,var(--amber));}
+.stat-icon{font-size:1.5rem;margin-bottom:0.75rem;}
+.stat-val{font-family:var(--display);font-size:2rem;font-weight:800;letter-spacing:-0.04em;line-height:1;}
+.stat-label{font-family:var(--mono);font-size:0.65rem;color:var(--gray);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.35rem;}
+.stat-change{font-family:var(--mono);font-size:0.68rem;margin-top:0.5rem;}
+.stat-change.up{color:var(--green);}
+.stat-change.down{color:var(--red-bright);}
+
+/* SECTION HEADER */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;}
+.section-hdr h2{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:-0.02em;}
+.section-hdr-left{display:flex;align-items:center;gap:0.75rem;}
+
+/* SEARCH BAR */
+.search-bar{display:flex;align-items:center;gap:0.5rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.85rem;transition:border-color .2s;}
+.search-bar:focus-within{border-color:rgba(43,107,255,0.4);}
+.search-bar input{background:none;border:none;outline:none;font-family:var(--body);font-size:0.85rem;color:var(--white);width:180px;cursor:none;}
+.search-bar input::placeholder{color:var(--gray2);}
+.search-bar span{color:var(--gray2);font-size:0.9rem;}
+
+/* FILTER TABS */
+.filter-tabs{display:flex;gap:0.35rem;}
+.filter-tab{font-family:var(--mono);font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--gray);background:var(--surface);border:1px solid var(--border);padding:0.35rem 0.9rem;border-radius:5px;cursor:none;transition:all .2s;}
+.filter-tab:hover{color:var(--white);}
+.filter-tab.active{background:rgba(43,107,255,0.15);border-color:rgba(43,107,255,0.35);color:var(--blue-glow);}
+
+/* TABLE */
+.table-wrap{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);}
+thead th{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);padding:0.9rem 1.25rem;text-align:left;white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+td{padding:0.85rem 1.25rem;font-size:0.875rem;vertical-align:middle;}
+
+/* AVATAR */
+.user-cell{display:flex;align-items:center;gap:0.75rem;}
+.user-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:0.75rem;flex-shrink:0;}
+.av-blue{background:linear-gradient(135deg,var(--blue-mid),var(--blue-glow));}
+.av-red{background:linear-gradient(135deg,var(--red),var(--red-bright));}
+.av-green{background:linear-gradient(135deg,#16a34a,var(--green));}
+.av-amber{background:linear-gradient(135deg,#d97706,var(--amber));}
+.user-name{font-weight:500;}
+.user-email{font-family:var(--mono);font-size:0.7rem;color:var(--gray);}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:0.3rem;font-family:var(--mono);font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;padding:0.25rem 0.65rem;border-radius:4px;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.badge-active{background:rgba(34,197,94,0.12);color:var(--green);}
+.badge-active::before{background:var(--green);}
+.badge-pending{background:rgba(245,158,11,0.12);color:var(--amber);}
+.badge-pending::before{background:var(--amber);}
+.badge-suspended{background:rgba(255,10,53,0.12);color:var(--red-bright);}
+.badge-suspended::before{background:var(--red-bright);}
+.badge-approved{background:rgba(34,197,94,0.12);color:var(--green);}
+.badge-approved::before{background:var(--green);}
+.badge-review{background:rgba(43,107,255,0.12);color:var(--blue-glow);}
+.badge-review::before{background:var(--blue-glow);}
+.badge-rejected{background:rgba(255,10,53,0.1);color:var(--red-bright);}
+.badge-rejected::before{background:var(--red-bright);}
+
+/* ACTION BTNS */
+.action-btns{display:flex;gap:0.4rem;align-items:center;}
+.act-btn{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.05em;padding:0.3rem 0.7rem;border-radius:4px;border:1px solid;cursor:none;transition:all .2s;background:transparent;}
+.act-btn.view{color:var(--blue-glow);border-color:rgba(43,107,255,0.3);}
+.act-btn.view:hover{background:rgba(43,107,255,0.12);}
+.act-btn.approve{color:var(--green);border-color:rgba(34,197,94,0.3);}
+.act-btn.approve:hover{background:rgba(34,197,94,0.1);}
+.act-btn.suspend{color:var(--amber);border-color:rgba(245,158,11,0.3);}
+.act-btn.suspend:hover{background:rgba(245,158,11,0.1);}
+.act-btn.remove{color:var(--red-bright);border-color:rgba(255,10,53,0.3);}
+.act-btn.remove:hover{background:rgba(255,10,53,0.1);}
+.act-btn.reject{color:var(--orange);border-color:rgba(249,115,22,0.3);}
+.act-btn.reject:hover{background:rgba(249,115,22,0.1);}
+
+/* BTN */
+.btn{font-family:var(--mono);font-size:0.75rem;letter-spacing:0.06em;text-transform:uppercase;padding:0.5rem 1.1rem;border-radius:6px;cursor:none;transition:all .2s;border:none;}
+.btn-primary{background:var(--blue-mid);color:var(--white);box-shadow:0 4px 20px rgba(19,56,190,0.3);}
+.btn-primary:hover{background:var(--blue-glow);transform:translateY(-1px);}
+.btn-red{background:var(--red);color:var(--white);box-shadow:0 4px 20px rgba(217,4,41,0.3);}
+.btn-red:hover{background:var(--red-bright);}
+.btn-ghost{background:var(--surface);color:var(--gray);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--white);border-color:rgba(255,255,255,0.2);}
+
+/* COURSE CARDS */
+.courses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;}
+.course-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;position:relative;transition:border-color .2s,transform .2s;}
+.course-card:hover{border-color:rgba(43,107,255,0.25);transform:translateY(-2px);}
+.course-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;}
+.course-lang{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.25rem 0.65rem;border-radius:4px;}
+.lang-html{background:rgba(255,107,107,0.12);color:#FF6B6B;}
+.lang-css{background:rgba(43,107,255,0.12);color:var(--blue-glow);}
+.lang-js{background:rgba(255,214,0,0.12);color:#FFD600;}
+.course-title{font-family:var(--display);font-size:1.05rem;font-weight:700;margin-bottom:0.35rem;letter-spacing:-0.02em;}
+.course-tutor-name{font-family:var(--mono);font-size:0.7rem;color:var(--gray);}
+.course-meta-row{display:flex;gap:1.25rem;margin:0.85rem 0;flex-wrap:wrap;}
+.course-meta-item{font-family:var(--mono);font-size:0.68rem;color:var(--gray);}
+.course-meta-item strong{color:var(--white);}
+.course-card-footer{display:flex;justify-content:space-between;align-items:center;padding-top:0.85rem;border-top:1px solid var(--border);}
+.course-price{font-family:var(--display);font-weight:700;font-size:1rem;}
+.course-price .naira{color:var(--red-bright);font-size:0.75rem;}
+
+/* PENDING REVIEW */
+.review-flag{display:inline-flex;align-items:center;gap:0.35rem;font-family:var(--mono);font-size:0.62rem;color:var(--amber);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);padding:0.2rem 0.55rem;border-radius:4px;margin-top:0.5rem;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease;}
+.modal{background:var(--dark2);border:1px solid rgba(43,107,255,0.25);border-radius:16px;padding:2rem;width:100%;max-width:480px;box-shadow:0 40px 100px rgba(0,0,0,0.6);position:relative;animation:slideUp .3s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.modal-title{font-family:var(--display);font-size:1.2rem;font-weight:700;margin-bottom:0.35rem;}
+.modal-sub{font-family:var(--mono);font-size:0.72rem;color:var(--gray);margin-bottom:1.5rem;letter-spacing:0.03em;}
+.modal-close{position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;cursor:none;color:var(--gray);font-size:1.1rem;transition:color .2s;}
+.modal-close:hover{color:var(--white);}
+.form-group{margin-bottom:1.1rem;}
+.form-label{display:block;font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:0.45rem;}
+.form-input,.form-select{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem;font-family:var(--body);font-size:0.9rem;color:var(--white);outline:none;cursor:none;transition:border-color .2s;}
+.form-input::placeholder{color:var(--gray2);}
+.form-input:focus,.form-select:focus{border-color:var(--blue-glow);box-shadow:0 0 0 3px rgba(43,107,255,0.1);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A94B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;}
+.form-select option{background:var(--dark2);}
+.modal-footer{display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--dark2);border:1px solid rgba(43,107,255,0.3);border-radius:8px;padding:0.75rem 1.25rem;font-family:var(--mono);font-size:0.78rem;color:var(--white);z-index:999;transform:translateX(120%);transition:transform .3s ease;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,0.4);max-width:300px;}
+.toast.show{transform:translateX(0);}
+.toast.success{border-color:rgba(34,197,94,0.4);}
+.toast.error{border-color:rgba(255,10,53,0.4);}
+.toast.warning{border-color:rgba(245,158,11,0.4);}
+
+/* CHARTS */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem;}
+.chart-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;}
+.chart-title{font-family:var(--display);font-size:0.95rem;font-weight:700;margin-bottom:0.25rem;}
+.chart-sub{font-family:var(--mono);font-size:0.65rem;color:var(--gray);margin-bottom:1.25rem;letter-spacing:0.05em;}
+.bar-chart{display:flex;flex-direction:column;gap:0.6rem;}
+.bar-row{display:flex;align-items:center;gap:0.75rem;}
+.bar-label{font-family:var(--mono);font-size:0.68rem;color:var(--gray);width:30px;text-align:right;flex-shrink:0;}
+.bar-track{flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+.bar-val{font-family:var(--mono);font-size:0.65rem;color:var(--gray);width:30px;flex-shrink:0;}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:1.5rem;}
+.donut{width:100px;height:100px;flex-shrink:0;}
+.donut-legend{display:flex;flex-direction:column;gap:0.5rem;}
+.legend-item{display:flex;align-items:center;gap:0.5rem;font-family:var(--mono);font-size:0.68rem;color:var(--gray);}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* RECENT ACTIVITY */
+.activity-list{display:flex;flex-direction:column;gap:0;background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.activity-item{display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;}
+.activity-item:last-child{border-bottom:none;}
+.activity-item:hover{background:rgba(255,255,255,0.02);}
+.activity-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;}
+.ai-blue{background:rgba(43,107,255,0.15);}
+.ai-red{background:rgba(217,4,41,0.15);}
+.ai-green{background:rgba(34,197,94,0.15);}
+.ai-amber{background:rgba(245,158,11,0.15);}
+.activity-body{flex:1;}
+.activity-text{font-size:0.875rem;line-height:1.4;}
+.activity-text strong{color:var(--white);}
+.activity-time{font-family:var(--mono);font-size:0.65rem;color:var(--gray2);margin-top:0.2rem;letter-spacing:0.05em;}
+
+/* RESPONSIVE */
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,1fr);}.chart-row{grid-template-columns:1fr;}}
+
+.hamburger-btn{display:none;position:fixed;top:14px;left:1rem;z-index:200;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:.5rem .6rem;cursor:none;flex-direction:column;gap:4px;}
+.hamburger-btn span{display:block;width:18px;height:2px;background:var(--white);border-radius:2px;transition:all .3s;}
+.hamburger-btn.open span:nth-child(1){transform:translateY(6px) rotate(45deg);}
+.hamburger-btn.open span:nth-child(2){opacity:0;}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:49;backdrop-filter:blur(2px);}
+.sidebar-overlay.open{display:block;}
+
+@media(max-width:768px){
+  .hamburger-btn{display:flex;}
+  .sidebar{transform:translateX(-100%);transition:transform .3s ease;z-index:50;}
+  .sidebar.open{transform:translateX(0) !important;}
+  .main{margin-left:0;}
+  .topbar{padding:0 1rem 0 3.5rem;}
+  .content{padding:1.25rem 1rem;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .chart-row{grid-template-columns:1fr;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:600px;}
+  .courses-grid{grid-template-columns:1fr;}
+  .page-title{font-size:.95rem;}
+  .breadcrumb{display:none;}
+  .topbar-actions{gap:.35rem;}
+  .topbar-actions .btn{font-size:.72rem;padding:.4rem .65rem;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .stat-val{font-size:1.5rem;}
+  .content{padding:1rem .75rem;}
+  .activity-feed{max-height:300px;}
+}
+#auth-loading{position:fixed;inset:0;background:var(--dark);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}#auth-loading .logo-l{font-family:Syne,sans-serif;font-size:2rem;font-weight:800;color:#fff;letter-spacing:-.03em;}#auth-loading .logo-l span{color:#FF0A35;}#auth-loading .spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.1);border-top-color:#2B6BFF;border-radius:50%;animation:spin .7s linear infinite;}@keyframes spin{to{transform:rotate(360deg)}}#auth-loading.hide{opacity:0;pointer-events:none;transition:opacity .3s;}
+</style>
+</head>
+<body>
+<div id="auth-loading"><div class="logo-l">frNt<span>c</span>Oda</div><div class="spin"></div></div>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="logo">frNt<span>c</span>Oda</a>
+    <div class="logo-sub">Admin Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <a class="nav-item active" onclick="showPanel('overview',this);return false;" href="#">
+      <span class="icon">📊</span>Dashboard
+    </a>
+    <a class="nav-item" onclick="showPanel('activity',this);return false;" href="#">
+      <span class="icon">🔔</span>Activity Log
+    </a>
+
+    <div class="nav-section-label">Management</div>
+    <a class="nav-item" onclick="showPanel('students',this);return false;" href="#">
+      <span class="icon">🎓</span>Students
+    </a>
+    <a class="nav-item" onclick="showPanel('tutors',this);return false;" href="#">
+      <span class="icon">👨‍🏫</span>Tutors
+      <span class="nav-badge" id="tutor-badge">2</span>
+    </a>
+    <a class="nav-item" onclick="showPanel('courses',this);return false;" href="#">
+      <span class="icon">📚</span>Courses
+      <span class="nav-badge" id="course-badge">1</span>
+    </a>
+
+    <div class="nav-section-label">Finance</div>
+    <a class="nav-item" onclick="showPanel('payments',this);return false;" href="#">
+      <span class="icon">💳</span>Payments
+    </a>
+    <a class="nav-item" onclick="showPanel('certificates',this);return false;" href="#">
+      <span class="icon">🎓</span>Certificates
+    </a>
+
+    <div class="nav-section-label">System</div>
+    <a class="nav-item" onclick="showPanel('settings',this);return false;" href="#">
+      <span class="icon">⚙️</span>Settings
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="admin-pill">
+      <div class="admin-avatar">AD</div>
+      <div class="admin-info">
+        <div class="admin-name">zibvh</div>
+        <div class="admin-role">Super Admin</div>
+      </div>
+      <button class="logout-btn" onclick="window.location.href='auth.html'">⏻</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="page-title" id="topbar-title">Dashboard Overview</div>
+        <div class="breadcrumb" id="topbar-breadcrumb">Admin / Overview</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="topbar-date"></div>
+      <button class="notif-btn"><span>🔔</span><div class="notif-dot"></div></button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ═══ OVERVIEW PANEL ═══ -->
+    <div class="panel active" id="panel-overview">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon">🎓</div>
+          <div class="stat-val" id="stat-students">142</div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-change up">↑ +12 this month</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">👨‍🏫</div>
+          <div class="stat-val" id="stat-tutors">6</div>
+          <div class="stat-label">Active Tutors</div>
+          <div class="stat-change up">↑ 2 pending approval</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">📚</div>
+          <div class="stat-val" id="stat-courses">3</div>
+          <div class="stat-label">Live Courses</div>
+          <div class="stat-change amber" style="color:var(--amber)">⚠ 1 under review</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon">💰</div>
+          <div class="stat-val">₦847k</div>
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-change up">↑ +₦94k this month</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-title">Enrollments by Month</div>
+          <div class="chart-sub">Past 6 months · All courses</div>
+          <div class="bar-chart">
+            <div class="bar-row"><div class="bar-label">Oct</div><div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--blue-glow);"></div></div><div class="bar-val">18</div></div>
+            <div class="bar-row"><div class="bar-label">Nov</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--blue-glow);"></div></div><div class="bar-val">24</div></div>
+            <div class="bar-row"><div class="bar-label">Dec</div><div class="bar-track"><div class="bar-fill" style="width:35%;background:var(--blue-glow);"></div></div><div class="bar-val">14</div></div>
+            <div class="bar-row"><div class="bar-label">Jan</div><div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--blue-glow);"></div></div><div class="bar-val">30</div></div>
+            <div class="bar-row"><div class="bar-label">Feb</div><div class="bar-track"><div class="bar-fill" style="width:88%;background:var(--blue-glow);"></div></div><div class="bar-val">35</div></div>
+            <div class="bar-row"><div class="bar-label">Mar</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,var(--blue-glow),var(--red-bright));"></div></div><div class="bar-val">40</div></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Course Breakdown</div>
+          <div class="chart-sub">Students per course</div>
+          <div class="donut-wrap">
+            <svg class="donut" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3.5"/>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2B6BFF" stroke-width="3.5" stroke-dasharray="42 58" stroke-dashoffset="25" stroke-linecap="round"/>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#FF0A35" stroke-width="3.5" stroke-dasharray="30 70" stroke-dashoffset="-17" stroke-linecap="round"/>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#FFD600" stroke-width="3.5" stroke-dasharray="28 72" stroke-dashoffset="-47" stroke-linecap="round"/>
+              <text x="18" y="20" text-anchor="middle" fill="white" font-size="6" font-family="Syne" font-weight="800">142</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--blue-glow)"></div>HTML — 60 students</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--red-bright)"></div>CSS — 43 students</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#FFD600"></div>JavaScript — 39 students</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-hdr"><h2>Recent Activity</h2></div>
+      <div class="activity-list">
+        <div class="activity-item">
+          <div class="activity-icon ai-green">✅</div>
+          <div class="activity-body">
+            <div class="activity-text"><strong>Fatima Nuhu</strong> enrolled in JavaScript Essentials</div>
+            <div class="activity-time">2 minutes ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon ai-amber">⏳</div>
+          <div class="activity-body">
+            <div class="activity-text"><strong>Tutor Emeka Eze</strong> submitted a new course for review — "CSS Animations"</div>
+            <div class="activity-time">14 minutes ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon ai-blue">🎓</div>
+          <div class="activity-body">
+            <div class="activity-text"><strong>Kola Balogun</strong> passed the HTML final test (score: 87%)</div>
+            <div class="activity-time">1 hour ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon ai-red">🛡️</div>
+          <div class="activity-body">
+            <div class="activity-text">New tutor application from <strong>Ngozi Eze</strong> — awaiting approval</div>
+            <div class="activity-time">3 hours ago</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon ai-green">💳</div>
+          <div class="activity-body">
+            <div class="activity-text"><strong>Amaka Obi</strong> paid ₦2,500 certificate fee for HTML</div>
+            <div class="activity-time">5 hours ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STUDENTS PANEL ═══ -->
+    <div class="panel" id="panel-students">
+      <div class="section-hdr">
+        <div class="section-hdr-left">
+          <h2>All Students</h2>
+          <div class="search-bar"><span>🔍</span><input type="text" placeholder="Search students…" oninput="filterTable('students-table',this.value)"></div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterBadge(this,'students-table','')">All</button>
+            <button class="filter-tab" onclick="filterBadge(this,'students-table','active')">Active</button>
+            <button class="filter-tab" onclick="filterBadge(this,'students-table','suspended')">Suspended</button>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('add-student-modal')">+ Add Student</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="students-table">
+          <thead><tr>
+            <th>Student</th><th>Phone</th><th>Enrolled In</th><th>Progress</th><th>Status</th><th>Joined</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            <tr data-status="active">
+              <td><div class="user-cell"><div class="user-av av-blue">AO</div><div><div class="user-name">Amaka Obi</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="53323e32383213363e323a3f7d303c3e">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">+234 801 234 5678</span></td>
+              <td>HTML Fundamentals</td>
+              <td><div style="display:flex;align-items:center;gap:.5rem;"><div style="flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:var(--green);border-radius:3px;"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--green)">100%</span></div></td>
+              <td><span class="badge badge-active">Active</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Jan 12, 2026</td>
+              <td><div class="action-btns"><button class="act-btn view" onclick="showToast('Viewing Amaka Obi','info')">View</button><button class="act-btn suspend" onclick="toggleStatus(this,'suspended')">Suspend</button><button class="act-btn remove" onclick="removeRow(this)">Remove</button></div></td>
+            </tr>
+            <tr data-status="active">
+              <td><div class="user-cell"><div class="user-av av-amber">KB</div><div><div class="user-name">Kola Balogun</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ae1e5e6ebcaefe7ebe3e6a4e9e5e7">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">+234 802 345 6789</span></td>
+              <td>CSS Mastery</td>
+              <td><div style="display:flex;align-items:center;gap:.5rem;"><div style="flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;"><div style="width:68%;height:100%;background:var(--blue-glow);border-radius:3px;"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--blue-glow)">68%</span></div></td>
+              <td><span class="badge badge-active">Active</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Feb 3, 2026</td>
+              <td><div class="action-btns"><button class="act-btn view">View</button><button class="act-btn suspend" onclick="toggleStatus(this,'suspended')">Suspend</button><button class="act-btn remove" onclick="removeRow(this)">Remove</button></div></td>
+            </tr>
+            <tr data-status="active">
+              <td><div class="user-cell"><div class="user-av av-green">FN</div><div><div class="user-name">Fatima Nuhu</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b6d0d7c2dfdbd7f6d3dbd7dfda98d5d9db">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">+234 803 456 7890</span></td>
+              <td>JavaScript Essentials</td>
+              <td><div style="display:flex;align-items:center;gap:.5rem;"><div style="flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;"><div style="width:22%;height:100%;background:var(--amber);border-radius:3px;"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--amber)">22%</span></div></td>
+              <td><span class="badge badge-active">Active</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 7, 2026</td>
+              <td><div class="action-btns"><button class="act-btn view">View</button><button class="act-btn suspend" onclick="toggleStatus(this,'suspended')">Suspend</button><button class="act-btn remove" onclick="removeRow(this)">Remove</button></div></td>
+            </tr>
+            <tr data-status="suspended">
+              <td><div class="user-cell"><div class="user-av av-red">TM</div><div><div class="user-name">Taiwo Martins</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1f6b7e7668705f7a727e7673317c7072">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">+234 804 567 8901</span></td>
+              <td>HTML Fundamentals</td>
+              <td><div style="display:flex;align-items:center;gap:.5rem;"><div style="flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;"><div style="width:45%;height:100%;background:var(--gray2);border-radius:3px;"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--gray2)">45%</span></div></td>
+              <td><span class="badge badge-suspended">Suspended</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Dec 19, 2025</td>
+              <td><div class="action-btns"><button class="act-btn view">View</button><button class="act-btn approve" onclick="toggleStatus(this,'active')">Restore</button><button class="act-btn remove" onclick="removeRow(this)">Remove</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ TUTORS PANEL ═══ -->
+    <div class="panel" id="panel-tutors">
+      <div class="section-hdr">
+        <div class="section-hdr-left">
+          <h2>All Tutors</h2>
+          <div class="search-bar"><span>🔍</span><input type="text" placeholder="Search tutors…" oninput="filterTable('tutors-table',this.value)"></div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterBadge(this,'tutors-table','')">All</button>
+            <button class="filter-tab" onclick="filterBadge(this,'tutors-table','active')">Active</button>
+            <button class="filter-tab" onclick="filterBadge(this,'tutors-table','pending')">Pending</button>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('add-tutor-modal')">+ Add Tutor</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="tutors-table">
+          <thead><tr>
+            <th>Tutor</th><th>Specialisation</th><th>Courses</th><th>Students</th><th>Status</th><th>Applied</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            <tr data-status="active">
+              <td><div class="user-cell"><div class="user-av av-blue">CO</div><div><div class="user-name">Chidi Okafor</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="45262d2c212c052028242c296b262a28">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">HTML & CSS</span></td>
+              <td>2</td><td>60</td>
+              <td><span class="badge badge-active">Active</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Nov 5, 2025</td>
+              <td><div class="action-btns"><button class="act-btn view">View</button><button class="act-btn suspend" onclick="toggleStatus(this,'suspended')">Suspend</button><button class="act-btn remove" onclick="removeRow(this)">Remove</button></div></td>
+            </tr>
+            <tr data-status="active">
+              <td><div class="user-cell"><div class="user-av av-green">SA</div><div><div class="user-name">Seun Adesanya</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="057660706b456068646c692b666a68">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">JavaScript</span></td>
+              <td>1</td><td>39</td>
+              <td><span class="badge badge-active">Active</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Dec 2, 2025</td>
+              <td><div class="action-btns"><button class="act-btn view">View</button><button class="act-btn suspend" onclick="toggleStatus(this,'suspended')">Suspend</button><button class="act-btn remove" onclick="removeRow(this)">Remove</button></div></td>
+            </tr>
+            <tr data-status="pending">
+              <td><div class="user-cell"><div class="user-av av-amber">NE</div><div><div class="user-name">Ngozi Eze</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="38565f574251785d55595154165b5755">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">HTML & CSS</span></td>
+              <td>—</td><td>—</td>
+              <td><span class="badge badge-pending">Pending</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 6, 2026</td>
+              <td><div class="action-btns"><button class="act-btn approve" onclick="toggleStatus(this,'active');updateBadge('tutor-badge',-1)">Approve</button><button class="act-btn reject" onclick="removeRow(this);updateBadge('tutor-badge',-1)">Reject</button></div></td>
+            </tr>
+            <tr data-status="pending">
+              <td><div class="user-cell"><div class="user-av av-red">BL</div><div><div class="user-name">Bello Lawal</div><div class="user-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3c5e595050537c59515d5550125f5351">[email&#160;protected]</a></div></div></div></td>
+              <td><span style="font-family:var(--mono);font-size:.78rem">JavaScript</span></td>
+              <td>—</td><td>—</td>
+              <td><span class="badge badge-pending">Pending</span></td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 7, 2026</td>
+              <td><div class="action-btns"><button class="act-btn approve" onclick="toggleStatus(this,'active');updateBadge('tutor-badge',-1)">Approve</button><button class="act-btn reject" onclick="removeRow(this);updateBadge('tutor-badge',-1)">Reject</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ COURSES PANEL ═══ -->
+    <div class="panel" id="panel-courses">
+      <div class="section-hdr">
+        <h2>All Courses</h2>
+        <div class="filter-tabs">
+          <button class="filter-tab active">All</button>
+          <button class="filter-tab">Live</button>
+          <button class="filter-tab">Under Review</button>
+        </div>
+      </div>
+      <div class="courses-grid">
+
+        <!-- HTML -->
+        <div class="course-card">
+          <div class="course-card-top">
+            <span class="course-lang lang-html">HTML</span>
+            <span class="badge badge-approved">Live</span>
+          </div>
+          <div class="course-title">HTML Fundamentals</div>
+          <div class="course-tutor-name">👨‍🏫 Chidi Okafor</div>
+          <div class="course-meta-row">
+            <div class="course-meta-item">Lessons: <strong>12</strong></div>
+            <div class="course-meta-item">Students: <strong>60</strong></div>
+            <div class="course-meta-item">Rating: <strong>⭐ 4.8</strong></div>
+          </div>
+          <div class="course-card-footer">
+            <div class="course-price"><span class="naira">₦</span>5,000</div>
+            <div class="action-btns">
+              <button class="act-btn view" onclick="showToast('Opening HTML course details','info')">View</button>
+              <button class="act-btn remove" onclick="removeCard(this)">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CSS -->
+        <div class="course-card">
+          <div class="course-card-top">
+            <span class="course-lang lang-css">CSS</span>
+            <span class="badge badge-approved">Live</span>
+          </div>
+          <div class="course-title">CSS Mastery</div>
+          <div class="course-tutor-name">👨‍🏫 Chidi Okafor</div>
+          <div class="course-meta-row">
+            <div class="course-meta-item">Lessons: <strong>15</strong></div>
+            <div class="course-meta-item">Students: <strong>43</strong></div>
+            <div class="course-meta-item">Rating: <strong>⭐ 4.6</strong></div>
+          </div>
+          <div class="course-card-footer">
+            <div class="course-price"><span class="naira">₦</span>6,500</div>
+            <div class="action-btns">
+              <button class="act-btn view">View</button>
+              <button class="act-btn remove" onclick="removeCard(this)">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- JS -->
+        <div class="course-card">
+          <div class="course-card-top">
+            <span class="course-lang lang-js">JavaScript</span>
+            <span class="badge badge-approved">Live</span>
+          </div>
+          <div class="course-title">JavaScript Essentials</div>
+          <div class="course-tutor-name">👨‍🏫 Seun Adesanya</div>
+          <div class="course-meta-row">
+            <div class="course-meta-item">Lessons: <strong>20</strong></div>
+            <div class="course-meta-item">Students: <strong>39</strong></div>
+            <div class="course-meta-item">Rating: <strong>⭐ 4.9</strong></div>
+          </div>
+          <div class="course-card-footer">
+            <div class="course-price"><span class="naira">₦</span>8,000</div>
+            <div class="action-btns">
+              <button class="act-btn view">View</button>
+              <button class="act-btn remove" onclick="removeCard(this)">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CSS Animations — PENDING REVIEW -->
+        <div class="course-card" style="border-color:rgba(245,158,11,0.3);">
+          <div class="course-card-top">
+            <span class="course-lang lang-css">CSS</span>
+            <span class="badge badge-pending">Review</span>
+          </div>
+          <div class="course-title">CSS Animations</div>
+          <div class="course-tutor-name">👨‍🏫 Ngozi Eze</div>
+          <div class="review-flag">⚠ Awaiting admin review</div>
+          <div class="course-meta-row" style="margin-top:.75rem;">
+            <div class="course-meta-item">Lessons: <strong>8</strong></div>
+            <div class="course-meta-item">Students: <strong>0</strong></div>
+            <div class="course-meta-item">Fee: <strong>₦5,500</strong></div>
+          </div>
+          <div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:.75rem;margin-bottom:.85rem;font-size:.82rem;color:var(--gray);line-height:1.5;">
+            <strong style="color:var(--amber)">Tutor's proposed fee:</strong> ₦5,500 &nbsp;·&nbsp; Admin can adjust before approving.
+            <div style="margin-top:.5rem;">
+              <input type="number" class="form-input" value="5500" style="padding:.4rem .7rem;font-size:.82rem;width:130px;display:inline-block;" id="review-fee">
+              <span style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-left:.5rem;">Adjust fee (₦)</span>
+            </div>
+          </div>
+          <div class="course-card-footer">
+            <div class="course-price"><span class="naira">₦</span><span id="display-fee">5,500</span></div>
+            <div class="action-btns">
+              <button class="act-btn approve" onclick="approveCourse(this)">Approve</button>
+              <button class="act-btn reject" onclick="removeCard(this);updateBadge('course-badge',-1)">Reject</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAYMENTS PANEL ═══ -->
+    <div class="panel" id="panel-payments">
+      <div class="section-hdr"><h2>Payment History</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Type</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><div class="user-cell"><div class="user-av av-blue">AO</div><div><div class="user-name">Amaka Obi</div></div></div></td><td>HTML Fundamentals</td><td><span style="font-family:var(--mono);font-size:.72rem;">Course Fee</span></td><td style="font-family:var(--display);font-weight:700;">₦5,000</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Jan 12</td><td><span class="badge badge-approved">Paid</span></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-blue">AO</div><div><div class="user-name">Amaka Obi</div></div></div></td><td>HTML Certificate</td><td><span style="font-family:var(--mono);font-size:.72rem;">Cert Fee</span></td><td style="font-family:var(--display);font-weight:700;">₦2,500</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 7</td><td><span class="badge badge-approved">Paid</span></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-amber">KB</div><div><div class="user-name">Kola Balogun</div></div></div></td><td>CSS Mastery</td><td><span style="font-family:var(--mono);font-size:.72rem;">Course Fee</span></td><td style="font-family:var(--display);font-weight:700;">₦6,500</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Feb 3</td><td><span class="badge badge-approved">Paid</span></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-green">FN</div><div><div class="user-name">Fatima Nuhu</div></div></div></td><td>JavaScript Essentials</td><td><span style="font-family:var(--mono);font-size:.72rem;">Course Fee</span></td><td style="font-family:var(--display);font-weight:700;">₦8,000</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 7</td><td><span class="badge badge-approved">Paid</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ CERTIFICATES PANEL ═══ -->
+    <div class="panel" id="panel-certificates">
+      <div class="section-hdr"><h2>Issued Certificates</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Cert ID</th><th>Fee Paid</th><th>Issued</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="user-cell"><div class="user-av av-blue">AO</div><div><div class="user-name">Amaka Obi</div></div></div></td>
+              <td>HTML Fundamentals</td>
+              <td><span style="font-family:var(--mono);font-size:.7rem;color:var(--blue-glow);">FNT-HTML-20260307-0041</span></td>
+              <td style="font-family:var(--display);font-weight:700;">₦2,500</td>
+              <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 7, 2026</td>
+              <td><div class="action-btns"><button class="act-btn view">View</button><button class="act-btn remove" onclick="removeRow(this)">Revoke</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ ACTIVITY LOG PANEL ═══ -->
+    <div class="panel" id="panel-activity">
+      <div class="section-hdr"><h2>Full Activity Log</h2></div>
+      <div class="activity-list">
+        <div class="activity-item"><div class="activity-icon ai-green">✅</div><div class="activity-body"><div class="activity-text"><strong>Fatima Nuhu</strong> enrolled in JavaScript Essentials</div><div class="activity-time">Mar 7, 2026 · 10:02 AM</div></div></div>
+        <div class="activity-item"><div class="activity-icon ai-amber">⏳</div><div class="activity-body"><div class="activity-text"><strong>Tutor Emeka Eze</strong> submitted new course "CSS Animations" for review</div><div class="activity-time">Mar 7, 2026 · 9:48 AM</div></div></div>
+        <div class="activity-item"><div class="activity-icon ai-blue">🎓</div><div class="activity-body"><div class="activity-text"><strong>Kola Balogun</strong> passed the HTML final test (87%)</div><div class="activity-time">Mar 7, 2026 · 9:10 AM</div></div></div>
+        <div class="activity-item"><div class="activity-icon ai-red">🛡️</div><div class="activity-body"><div class="activity-text">New tutor application received from <strong>Ngozi Eze</strong></div><div class="activity-time">Mar 7, 2026 · 7:32 AM</div></div></div>
+        <div class="activity-item"><div class="activity-icon ai-green">💳</div><div class="activity-body"><div class="activity-text"><strong>Amaka Obi</strong> paid ₦2,500 certificate fee for HTML course</div><div class="activity-time">Mar 7, 2026 · 6:55 AM</div></div></div>
+        <div class="activity-item"><div class="activity-icon ai-blue">🎓</div><div class="activity-body"><div class="activity-text">Certificate <strong>FNT-HTML-20260307-0041</strong> issued to Amaka Obi</div><div class="activity-time">Mar 7, 2026 · 6:56 AM</div></div></div>
+        <div class="activity-item"><div class="activity-icon ai-amber">⏳</div><div class="activity-body"><div class="activity-text">New tutor application from <strong>Bello Lawal</strong> (JavaScript)</div><div class="activity-time">Mar 7, 2026 · 5:14 AM</div></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ SETTINGS PANEL ═══ -->
+    <div class="panel" id="panel-settings">
+      <div class="section-hdr"><h2>Platform Settings</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+        <div class="chart-card">
+          <div class="chart-title">Certificate Fees</div>
+          <div class="chart-sub" style="margin-bottom:1rem;">Set minimum cert fee per course type</div>
+          <div class="form-group"><label class="form-label">HTML & CSS Certificate Fee (₦)</label><input type="number" class="form-input" value="2500"></div>
+          <div class="form-group"><label class="form-label">JavaScript Certificate Fee (₦)</label><input type="number" class="form-input" value="3500"></div>
+          <button class="btn btn-primary" onclick="showToast('Certificate fees saved ✓','success')">Save Fees</button>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Platform Info</div>
+          <div class="chart-sub" style="margin-bottom:1rem;">General platform settings</div>
+          <div class="form-group"><label class="form-label">Site Name</label><input type="text" class="form-input" value="frNtcOda"></div>
+          <div class="form-group"><label class="form-label">Contact Email</label><input type="email" class="form-input" value="admin@frntcoda.com"></div>
+          <div class="form-group"><label class="form-label">Support Phone</label><input type="tel" class="form-input" value="+234 800 000 0000"></div>
+          <button class="btn btn-primary" onclick="showToast('Settings saved ✓','success')">Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MODALS -->
+<!-- Add Student -->
+<div class="modal-overlay" id="add-student-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('add-student-modal')">✕</button>
+    <div class="modal-title">Add Student</div>
+    <div class="modal-sub">Manually add a student to the platform</div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" placeholder="First name" id="new-s-fname"></div>
+      <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-input" placeholder="Last name" id="new-s-lname"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" placeholder="email@example.com" id="new-s-email"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" placeholder="+234…" id="new-s-phone"></div>
+    <div class="form-group"><label class="form-label">Enroll In Course</label>
+      <select class="form-select" id="new-s-course">
+        <option value="">Select course (optional)</option>
+        <option>HTML Fundamentals</option>
+        <option>CSS Mastery</option>
+        <option>JavaScript Essentials</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-student-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addStudent()">Add Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Tutor -->
+<div class="modal-overlay" id="add-tutor-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('add-tutor-modal')">✕</button>
+    <div class="modal-title">Add Tutor</div>
+    <div class="modal-sub">Manually add & approve a tutor</div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" placeholder="First name" id="new-t-fname"></div>
+      <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-input" placeholder="Last name" id="new-t-lname"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" placeholder="email@example.com" id="new-t-email"></div>
+    <div class="form-group"><label class="form-label">Specialisation</label>
+      <select class="form-select" id="new-t-spec">
+        <option>HTML</option><option>CSS</option><option>JavaScript</option><option>HTML & CSS</option><option>Full Stack</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-tutor-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addTutor()">Add Tutor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// SIDEBAR TOGGLE (mobile)
+function toggleSidebar(){
+  const s=document.getElementById('sidebar');
+  const o=document.getElementById('sidebar-overlay');
+  const b=document.getElementById('hamburger-btn');
+  s.classList.toggle('open');o.classList.toggle('open');b.classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('hamburger-btn').classList.remove('open');
+}
+
+// CURSOR
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function a(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(a);})();
+document.querySelectorAll('a,button,input,select').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='16px';cur.style.height='16px';ring.style.width='42px';ring.style.height='42px';});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';ring.style.width='30px';ring.style.height='30px';});
+});
+
+// DATE
+const d=new Date();
+document.getElementById('topbar-date').textContent=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+// PANELS
+const titles={overview:'Dashboard Overview',students:'Students',tutors:'Tutors',courses:'Courses',payments:'Payments',certificates:'Certificates',activity:'Activity Log',settings:'Settings'};
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('topbar-title').textContent=titles[id]||id;
+  document.getElementById('topbar-breadcrumb').textContent='Admin / '+(titles[id]||id);
+  closeSidebar();
+}
+
+// TOAST
+function showToast(msg,type='info'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+(type||'');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// MODAL
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+// TABLE FILTER
+function filterTable(tableId,q){
+  const rows=document.getElementById(tableId).querySelectorAll('tbody tr');
+  rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';});
+}
+function filterBadge(btn,tableId,status){
+  btn.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tableId).querySelectorAll('tbody tr').forEach(r=>{
+    r.style.display=(!status||r.dataset.status===status)?'':'none';
+  });
+}
+
+// ROW ACTIONS
+function removeRow(btn){
+  if(!confirm('Are you sure you want to remove this entry?'))return;
+  btn.closest('tr').remove();
+  showToast('Entry removed','warning');
+}
+function removeCard(btn){
+  if(!confirm('Remove this course?'))return;
+  btn.closest('.course-card').remove();
+  showToast('Course removed','warning');
+}
+function toggleStatus(btn,newStatus){
+  const row=btn.closest('tr');
+  const badge=row.querySelector('.badge');
+  row.dataset.status=newStatus;
+  if(newStatus==='active'){badge.className='badge badge-active';badge.textContent='Active';btn.textContent='Suspend';btn.className='act-btn suspend';btn.setAttribute('onclick',"toggleStatus(this,'suspended')");}
+  else if(newStatus==='suspended'){badge.className='badge badge-suspended';badge.textContent='Suspended';btn.textContent='Restore';btn.className='act-btn approve';btn.setAttribute('onclick',"toggleStatus(this,'active')");}
+  showToast('Status updated to '+newStatus,'success');
+}
+function updateBadge(id,delta){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const v=parseInt(el.textContent)+delta;
+  if(v<=0)el.style.display='none'; else el.textContent=v;
+}
+
+// APPROVE COURSE
+function approveCourse(btn){
+  const fee=document.getElementById('review-fee').value;
+  document.getElementById('display-fee').textContent=parseInt(fee).toLocaleString();
+  const card=btn.closest('.course-card');
+  card.querySelector('.badge').className='badge badge-approved';
+  card.querySelector('.badge').textContent='Live';
+  card.querySelector('.review-flag')?.remove();
+  card.querySelector('[id="review-fee"]')?.closest('div')?.remove();
+  card.style.borderColor='';
+  btn.closest('.action-btns').innerHTML='<button class="act-btn view">View</button><button class="act-btn remove" onclick="removeCard(this)">Remove</button>';
+  updateBadge('course-badge',-1);
+  showToast('Course approved and set live ✓','success');
+}
+
+// ADD STUDENT
+function addStudent(){
+  const fn=document.getElementById('new-s-fname').value.trim();
+  const ln=document.getElementById('new-s-lname').value.trim();
+  const em=document.getElementById('new-s-email').value.trim();
+  if(!fn||!ln||!em){showToast('Please fill all required fields','error');return;}
+  const initials=(fn[0]+ln[0]).toUpperCase();
+  const colors=['av-blue','av-green','av-amber','av-red'];
+  const c=colors[Math.floor(Math.random()*colors.length)];
+  const course=document.getElementById('new-s-course').value||'—';
+  const tbody=document.querySelector('#students-table tbody');
+  const tr=document.createElement('tr');
+  tr.dataset.status='active';
+  tr.innerHTML=`<td><div class="user-cell"><div class="user-av ${c}">${initials}</div><div><div class="user-name">${fn} ${ln}</div><div class="user-email">${em}</div></div></div></td>
+    <td><span style="font-family:var(--mono);font-size:.78rem">—</span></td>
+    <td>${course}</td>
+    <td><div style="display:flex;align-items:center;gap:.5rem;"><div style="flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;"><div style="width:0%;height:100%;background:var(--blue-glow);border-radius:3px;"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--blue-glow)">0%</span></div></td>
+    <td><span class="badge badge-active">Active</span></td>
+    <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 7, 2026</td>
+    <td><div class="action-btns"><button class="act-btn view">View</button><button class="act-btn suspend" onclick="toggleStatus(this,'suspended')">Suspend</button><button class="act-btn remove" onclick="removeRow(this)">Remove</button></div></td>`;
+  tbody.prepend(tr);
+  closeModal('add-student-modal');
+  showToast(`Student ${fn} ${ln} added ✓`,'success');
+  ['new-s-fname','new-s-lname','new-s-email','new-s-phone'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ADD TUTOR
+function addTutor(){
+  const fn=document.getElementById('new-t-fname').value.trim();
+  const ln=document.getElementById('new-t-lname').value.trim();
+  const em=document.getElementById('new-t-email').value.trim();
+  if(!fn||!ln||!em){showToast('Please fill all required fields','error');return;}
+  const initials=(fn[0]+ln[0]).toUpperCase();
+  const colors=['av-blue','av-green','av-amber','av-red'];
+  const c=colors[Math.floor(Math.random()*colors.length)];
+  const spec=document.getElementById('new-t-spec').value;
+  const tbody.innerHTML+=`<tr><td><div class="user-cell"><div class="user-av ${c}">${initials}</div><div><div style="font-weight:500;">${fn} ${ln}</div><div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">${email}</div></div></div></td><td>${spec}</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Just now</td><td><span class="badge b-pend">Pending</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn edit" onclick="approveTutor(this)">Approve</button><button class="act-btn del" onclick="removeTutor(this)">Reject</button></div></td></tr>`;
+  closeModal('add-tutor-modal');showToast('Tutor added ✓','success');
+}
+</script>
+
+<!-- ═══════════════════════════════════════════
+     FIREBASE — Admin Dashboard
+     Handles: auth guard, real students/tutors/
+     courses, approve tutors, approve courses,
+     payments, certificates, stats
+═══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, updateDoc, deleteDoc,
+  collection, getDocs, query, where, orderBy,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── PASTE YOUR FIREBASE CONFIG HERE ──────────
+  const firebaseConfig = {
+  apiKey:            "AIzaSyATtx9-URlB2-ZKc_4eXIlr8lQxg_dlJAQ",
+  authDomain:        "frnt-coda.firebaseapp.com",
+  projectId:         "frnt-coda",
+  storageBucket:     "frnt-coda.firebasestorage.app",
+  messagingSenderId: "564512970305",
+  appId:             "1:564512970305:web:d7fd66bdcf6b8268d4d8c0",
+};
+// ─────────────────────────────────────────────
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ── AUTH GUARD — ADMIN ONLY ───────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "auth.html"; return; }
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) { await signOut(auth); window.location.href = "auth.html"; return; }
+  const profile = snap.data();
+  if (profile.role !== "admin") {
+    alert("Access denied.");
+    await signOut(auth); window.location.href = "auth.html"; return;
+  }
+  loadAdminDashboard();
+});
+
+// ── LOAD EVERYTHING ───────────────────────────
+async function loadAdminDashboard() {
+  await Promise.all([
+    loadStats(),
+    loadStudents(),
+    loadTutors(),
+    loadCourses(),
+    loadPayments(),
+    loadCertificates(),
+  ]);
+}
+
+// ── STATS ─────────────────────────────────────
+async function loadStats() {
+  const [studentsSnap, tutorsSnap, coursesSnap, paymentsSnap] = await Promise.all([
+    getDocs(query(collection(db, "users"), where("role", "==", "student"))),
+    getDocs(query(collection(db, "users"), where("role", "==", "tutor"), where("status", "==", "active"))),
+    getDocs(query(collection(db, "courses"), where("status", "==", "live"))),
+    getDocs(collection(db, "payments")),
+  ]);
+
+  let totalRevenue = 0;
+  paymentsSnap.docs.forEach(d => totalRevenue += (d.data().amount || 0));
+
+  const statVals = document.querySelectorAll(".stat-val");
+  if (statVals[0]) statVals[0].textContent = studentsSnap.size;
+  if (statVals[1]) statVals[1].textContent = tutorsSnap.size;
+  if (statVals[2]) statVals[2].textContent = coursesSnap.size;
+  if (statVals[3]) statVals[3].textContent = "₦" + (totalRevenue >= 1000 ? (totalRevenue/1000).toFixed(0)+"k" : totalRevenue);
+}
+
+// ── STUDENTS ──────────────────────────────────
+async function loadStudents() {
+  const snap = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+  const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const tbody = document.querySelector("#panel-students table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  students.forEach(s => {
+    const initials = ((s.firstName||"?")[0] + (s.lastName||"?")[0]).toUpperCase();
+    const statusClass = s.status === "active" ? "b-active" : "b-suspended";
+    const statusLabel = s.status === "active" ? "Active" : "Suspended";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><div class="user-cell">
+        <div class="user-av av-b">${initials}</div>
+        <div><div style="font-weight:500;">${s.fullName || s.firstName + " " + s.lastName}</div>
+          <div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">${s.email}</div>
+        </div></div></td>
+      <td>${s.phone || "—"}</td>
+      <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">
+        ${s.createdAt?.toDate ? s.createdAt.toDate().toLocaleDateString() : "—"}</td>
+      <td><span class="badge ${s.status === "active" ? "b-pass" : "b-fail"}">${statusLabel}</span></td>
+      <td><div style="display:flex;gap:.35rem;">
+        <button class="act-btn view" onclick="viewStudent('${s.id}')">View</button>
+        <button class="act-btn edit" onclick="toggleStudentStatus('${s.id}','${s.status}',this)">
+          ${s.status === "active" ? "Suspend" : "Restore"}</button>
+        <button class="act-btn del" onclick="deleteUser('${s.id}',this)">Remove</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── TUTORS ────────────────────────────────────
+async function loadTutors() {
+  const snap = await getDocs(query(collection(db, "users"), where("role", "==", "tutor")));
+  const tutors = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const pending = tutors.filter(t => t.status === "pending").length;
+
+  // Update nav badge
+  const badge = document.querySelector('[onclick*="tutors"] .nav-badge');
+  if (badge) badge.textContent = pending || "";
+
+  const tbody = document.querySelector("#panel-tutors table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  tutors.forEach(t => {
+    const initials = ((t.firstName||"?")[0] + (t.lastName||"?")[0]).toUpperCase();
+    const isPending = t.status === "pending";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><div class="user-cell">
+        <div class="user-av av-g">${initials}</div>
+        <div><div style="font-weight:500;">${t.fullName || t.firstName + " " + t.lastName}</div>
+          <div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">${t.email}</div>
+        </div></div></td>
+      <td>${t.specialisation || "—"}</td>
+      <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">
+        ${t.createdAt?.toDate ? t.createdAt.toDate().toLocaleDateString() : "—"}</td>
+      <td><span class="badge ${isPending ? "b-pend" : t.status==="active" ? "b-pass" : "b-fail"}">
+        ${isPending ? "Pending" : t.status==="active" ? "Active" : "Suspended"}</span></td>
+      <td><div style="display:flex;gap:.35rem;">
+        ${isPending ? `<button class="act-btn edit" onclick="approveTutorDB('${t.id}',this)">Approve</button>
+          <button class="act-btn del" onclick="rejectTutor('${t.id}',this)">Reject</button>` :
+          `<button class="act-btn edit" onclick="toggleStudentStatus('${t.id}','${t.status}',this)">
+            ${t.status==="active"?"Suspend":"Restore"}</button>
+           <button class="act-btn del" onclick="deleteUser('${t.id}',this)">Remove</button>`}
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── COURSES ───────────────────────────────────
+async function loadCourses() {
+  const snap = await getDocs(collection(db, "courses"));
+  const courses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const grid = document.querySelector("#panel-courses .courses-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  courses.forEach(c => {
+    const langClass = c.language==="HTML"?"lang-html":c.language==="CSS"?"lang-css":"lang-js";
+    const isPending = c.status === "pending";
+    const div = document.createElement("div");
+    div.className = "course-card";
+    if (isPending) div.style.borderColor = "rgba(245,158,11,0.3)";
+    div.innerHTML = `
+      <div class="course-card-header">
+        <span class="course-lang-tag ${langClass}">${c.language}</span>
+        <span class="course-status-badge ${isPending?"csb-pending":"csb-live"}">${isPending?"Pending":"Live"}</span>
+      </div>
+      <div class="course-card-body">
+        <div class="course-title">${c.title}</div>
+        <div class="course-desc">${c.description||""}</div>
+        ${isPending ? `
+        <div style="margin-bottom:.85rem;">
+          <label style="font-family:var(--mono);font-size:.62rem;color:var(--gray);display:block;margin-bottom:.35rem;">APPROVE WITH FEE (₦)</label>
+          <input type="number" value="${c.price||0}" id="fee-${c.id}"
+            style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:.45rem .75rem;color:var(--white);font-family:var(--mono);font-size:.85rem;width:130px;">
+        </div>` : ""}
+        <div class="course-meta-grid">
+          <div class="meta-item"><div class="meta-item-label">Tutor</div>
+            <div class="meta-item-val" style="font-size:.8rem;">${c.tutorName||"—"}</div></div>
+          <div class="meta-item"><div class="meta-item-label">Students</div>
+            <div class="meta-item-val">${c.studentsCount||0}</div></div>
+          <div class="meta-item"><div class="meta-item-label">Fee</div>
+            <div class="meta-item-val" style="color:var(--green);">₦${Number(c.price||0).toLocaleString()}</div></div>
+          <div class="meta-item"><div class="meta-item-label">Rating</div>
+            <div class="meta-item-val">${c.rating?"⭐"+c.rating:"—"}</div></div>
+        </div>
+      </div>
+      <div class="course-card-footer">
+        ${isPending ? `
+          <button class="btn btn-primary btn-sm" onclick="approveCourseDB('${c.id}',this)">Approve</button>
+          <button class="act-btn del" onclick="rejectCourse('${c.id}',this)">Reject</button>` :
+          `<button class="act-btn del" onclick="deleteCourseDB('${c.id}',this)">Delete</button>`}
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+// ── PAYMENTS ──────────────────────────────────
+async function loadPayments() {
+  const snap = await getDocs(query(collection(db, "payments"), orderBy("paidAt", "desc")));
+  const payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const tbody = document.querySelector("#panel-payments table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  // Summary counts for admin
+  const manualOwed = payments.filter(p => p.splitType === "manual" && !p.tutorPaid);
+  if (manualOwed.length > 0) {
+    const totalOwed = manualOwed.reduce((sum, p) => sum + (p.tutorShare || 0), 0);
+    const banner = document.querySelector("#panel-payments .manual-banner");
+    if (!banner) {
+      const div = document.createElement("div");
+      div.className = "manual-banner";
+      div.style.cssText = "background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:.85rem 1.1rem;margin-bottom:1.25rem;font-size:.83rem;color:#F59E0B;line-height:1.6;";
+      div.innerHTML = `⚠️ <strong>${manualOwed.length} payment${manualOwed.length>1?"s":""}</strong> require manual tutor payout — total owed: <strong>₦${totalOwed.toLocaleString()}</strong>. Mark as paid after you transfer.`;
+      tbody.closest("div")?.before(div);
+    }
+  }
+
+  payments.forEach(p => {
+    const isManual   = p.splitType === "manual";
+    const isCert     = p.type === "certificate";
+    const tutorPct   = isCert ? "50%" : "93%";
+    const platPct    = isCert ? "50%" : "7%";
+    const tutorAmt   = p.tutorShare  ? `₦${Number(p.tutorShare).toLocaleString()}`  : "—";
+    const platAmt    = p.platformShare ? `₦${Number(p.platformShare).toLocaleString()}` : "—";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">
+        ${p.paidAt?.toDate ? p.paidAt.toDate().toLocaleDateString() : "—"}</td>
+      <td>${p.studentId?.slice(0,8)||"—"}…</td>
+      <td><span class="badge ${isCert?"b-pend":"b-pass"}">${isCert?"Cert Fee":"Course Fee"}</span></td>
+      <td style="font-family:var(--display);font-weight:700;color:var(--green);">₦${Number(p.amount||0).toLocaleString()}</td>
+      <td style="font-family:var(--mono);font-size:.7rem;">
+        <span style="color:#22C55E;">${platAmt} (${platPct} yours)</span><br>
+        <span style="color:var(--gray);">${tutorAmt} (${tutorPct} tutor)</span>
+      </td>
+      <td>
+        ${isManual
+          ? `<span class="badge ${p.tutorPaid?"b-pass":"b-fail"}" style="cursor:${p.tutorPaid?"default":"pointer"}"
+               onclick="${p.tutorPaid?"":"markTutorPaid('"+p.id+"',this)"}">
+               ${p.tutorPaid ? "✓ Paid" : "⚠ Pay Tutor"}
+             </span>`
+          : `<span class="badge b-pass">Auto ✓</span>`}
+      </td>
+      <td style="font-family:var(--mono);font-size:.68rem;color:var(--gray);">${p.flwRef||"—"}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// Mark manual tutor payment as done
+window.markTutorPaid = async function(paymentId, el) {
+  if (!confirm("Mark this tutor payout as paid?")) return;
+  try {
+    await updateDoc(doc(db, "payments", paymentId), { tutorPaid: true, tutorPaidAt: serverTimestamp() });
+    el.textContent   = "✓ Paid";
+    el.className     = "badge b-pass";
+    el.style.cursor  = "default";
+    el.onclick       = null;
+    showToast("Marked as paid ✓", "success");
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+// ── CERTIFICATES ──────────────────────────────
+async function loadCertificates() {
+  const snap = await getDocs(collection(db, "certificates"));
+  const certs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const tbody = document.querySelector("#panel-certificates table tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  certs.forEach(c => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-weight:500;">${c.studentName||"—"}</td>
+      <td>${c.courseName||"—"}</td>
+      <td style="font-family:var(--mono);font-size:.7rem;color:var(--blue-glow);">${c.certId}</td>
+      <td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">
+        ${c.issuedAt?.toDate ? c.issuedAt.toDate().toLocaleDateString() : "—"}</td>
+      <td style="font-family:var(--display);font-weight:700;color:var(--green);">₦${Number(c.certFee||0).toLocaleString()}</td>
+      <td><button class="act-btn del" onclick="revokeCert('${c.certId}',this)">Revoke</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── ACTIONS ───────────────────────────────────
+
+window.approveTutorDB = async function(uid, btn) {
+  try {
+    await updateDoc(doc(db, "users", uid), { status: "active", approvedAt: serverTimestamp() });
+    btn.closest("tr").querySelector(".badge").textContent = "Active";
+    btn.closest("tr").querySelector(".badge").className  = "badge b-pass";
+    btn.closest("div").innerHTML = `<span style="font-family:var(--mono);font-size:.7rem;color:var(--green);">Approved ✓</span>`;
+    showToast("Tutor approved ✓", "success");
+    loadStats();
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.rejectTutor = async function(uid, btn) {
+  if (!confirm("Reject and delete this tutor application?")) return;
+  try {
+    await deleteDoc(doc(db, "users", uid));
+    btn.closest("tr").remove();
+    showToast("Application rejected", "warning");
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.approveCourseDB = async function(courseId, btn) {
+  const feeInput = document.getElementById("fee-" + courseId);
+  const fee = feeInput ? Number(feeInput.value) : null;
+  try {
+    await updateDoc(doc(db, "courses", courseId), {
+      status: "live", approvedAt: serverTimestamp(),
+      ...(fee ? { price: fee } : {}),
+    });
+    showToast("Course approved and live ✓", "success");
+    loadCourses();
+    loadStats();
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.rejectCourse = async function(courseId, btn) {
+  if (!confirm("Reject this course?")) return;
+  try {
+    await updateDoc(doc(db, "courses", courseId), { status: "rejected" });
+    btn.closest(".course-card").remove();
+    showToast("Course rejected", "warning");
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.deleteCourseDB = async function(courseId, btn) {
+  if (!confirm("Permanently delete this course?")) return;
+  try {
+    await deleteDoc(doc(db, "courses", courseId));
+    btn.closest(".course-card").remove();
+    showToast("Course deleted", "warning");
+    loadStats();
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.toggleStudentStatus = async function(uid, currentStatus, btn) {
+  const newStatus = currentStatus === "active" ? "suspended" : "active";
+  try {
+    await updateDoc(doc(db, "users", uid), { status: newStatus });
+    btn.textContent = newStatus === "active" ? "Suspend" : "Restore";
+    const badge = btn.closest("tr").querySelector(".badge");
+    badge.textContent = newStatus === "active" ? "Active" : "Suspended";
+    badge.className   = "badge " + (newStatus === "active" ? "b-pass" : "b-fail");
+    showToast("Status updated ✓", "success");
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.deleteUser = async function(uid, btn) {
+  if (!confirm("Permanently remove this user?")) return;
+  try {
+    await deleteDoc(doc(db, "users", uid));
+    btn.closest("tr").remove();
+    showToast("User removed", "warning");
+    loadStats();
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.revokeCert = async function(certId, btn) {
+  if (!confirm("Revoke this certificate? This cannot be undone.")) return;
+  try {
+    await deleteDoc(doc(db, "certificates", certId));
+    btn.closest("tr").remove();
+    showToast("Certificate revoked", "warning");
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+window.viewStudent = function(uid) {
+  showToast("UID: " + uid, "");
+};
+
+// ── LOGOUT ────────────────────────────────────
+document.querySelector(".logout-btn").onclick = async () => {
+  await signOut(auth); window.location.href = "auth.html";
+};
+</script>
+</body>
+</html>

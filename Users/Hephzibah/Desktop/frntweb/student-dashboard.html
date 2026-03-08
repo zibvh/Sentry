@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>frNtcOda — Student Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#0A1F6E;--blue-mid:#1338BE;--blue-glow:#2B6BFF;
+  --red:#D90429;--red-bright:#FF0A35;
+  --white:#FFFFFF;--dark:#060D2B;--dark2:#0D1845;--dark3:#111C50;
+  --surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.08);
+  --gray:#8A94B8;--gray2:#4A5378;
+  --green:#22C55E;--amber:#F59E0B;
+  --mono:'DM Mono',monospace;--display:'Syne',sans-serif;--body:'Outfit',sans-serif;
+  --sidebar:240px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--body);background:var(--dark);color:var(--white);display:flex;min-height:100vh;overflow-x:hidden;cursor:none;}
+.cursor{width:10px;height:10px;background:var(--red-bright);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .2s,height .2s;}
+.cursor-ring{width:30px;height:30px;border:1.5px solid rgba(255,10,53,0.4);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .25s,height .25s;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border);}
+.logo{font-family:var(--display);font-size:1.4rem;font-weight:800;letter-spacing:-0.03em;color:var(--white);text-decoration:none;}
+.logo span{color:var(--red-bright);}
+.logo-sub{font-family:var(--mono);font-size:0.62rem;color:var(--gray);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2rem;}
+.sidebar-nav{flex:1;padding:1rem 0;overflow-y:auto;}
+.nav-section-label{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray2);padding:0.75rem 1.25rem 0.4rem;}
+.nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1.25rem;font-size:0.875rem;color:var(--gray);text-decoration:none;cursor:none;transition:all .2s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--white);background:rgba(255,255,255,.04);}
+.nav-item.active{color:var(--white);background:rgba(255,10,53,.08);border-left-color:var(--red-bright);}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--red-bright);color:var(--white);font-family:var(--mono);font-size:.6rem;padding:.15rem .45rem;border-radius:10px;}
+.sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);}
+.student-pill{display:flex;align-items:center;gap:.75rem;}
+.student-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red-bright));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:.85rem;flex-shrink:0;}
+.student-info{flex:1;min-width:0;}
+.student-name{font-size:.85rem;font-weight:600;}
+.student-role{font-family:var(--mono);font-size:.62rem;color:var(--gray);letter-spacing:.08em;}
+.logout-btn{background:none;border:none;cursor:none;color:var(--gray);font-size:.9rem;transition:color .2s;}
+.logout-btn:hover{color:var(--red-bright);}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;}
+.topbar{height:64px;background:rgba(6,13,43,.9);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:40;}
+.page-title{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:-.02em;}
+.breadcrumb{font-family:var(--mono);font-size:.7rem;color:var(--gray);}
+.topbar-right{display:flex;align-items:center;gap:.75rem;}
+.browse-btn{font-family:var(--mono);font-size:.72rem;background:var(--red);color:var(--white);border:none;padding:.4rem 1rem;border-radius:6px;cursor:none;transition:background .2s;letter-spacing:.05em;}
+.browse-btn:hover{background:var(--red-bright);}
+.notif-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:none;font-size:1rem;position:relative;transition:border-color .2s;}
+.notif-btn:hover{border-color:rgba(255,10,53,.4);}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--red-bright);border-radius:50%;border:1.5px solid var(--dark2);}
+
+/* CONTENT */
+.content{flex:1;padding:2rem;overflow-y:auto;}
+.panel{display:none;}
+.panel.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* WELCOME BANNER */
+.welcome-banner{background:linear-gradient(135deg,var(--dark2) 0%,rgba(19,56,190,.25) 50%,var(--dark2) 100%);border:1px solid rgba(43,107,255,.2);border-radius:16px;padding:2rem;margin-bottom:2rem;position:relative;overflow:hidden;}
+.welcome-banner::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(43,107,255,.15) 0%,transparent 70%);border-radius:50%;}
+.welcome-banner::after{content:'frNtcOda';position:absolute;right:2rem;top:50%;transform:translateY(-50%);font-family:var(--display);font-size:5rem;font-weight:800;color:rgba(255,255,255,.03);letter-spacing:-.05em;pointer-events:none;}
+.welcome-tag{font-family:var(--mono);font-size:.68rem;color:var(--red-bright);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem;}
+.welcome-title{font-family:var(--display);font-size:1.7rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.5rem;}
+.welcome-sub{font-size:.9rem;color:var(--gray);max-width:500px;}
+.welcome-streak{display:inline-flex;align-items:center;gap:.4rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);padding:.3rem .85rem;border-radius:20px;font-family:var(--mono);font-size:.68rem;color:var(--amber);margin-top:1rem;letter-spacing:.05em;}
+
+/* STATS */
+.mini-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.mini-stat{background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;transition:border-color .2s,transform .2s;}
+.mini-stat:hover{border-color:rgba(255,10,53,.25);transform:translateY(-2px);}
+.mini-stat-icon{font-size:1.4rem;margin-bottom:.5rem;}
+.mini-stat-val{font-family:var(--display);font-size:1.6rem;font-weight:800;letter-spacing:-.04em;}
+.mini-stat-label{font-family:var(--mono);font-size:.62rem;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;margin-top:.25rem;}
+
+/* ENROLLED COURSES */
+.course-progress-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,transform .2s;}
+.course-progress-card:hover{border-color:rgba(255,10,53,.2);transform:translateY(-2px);}
+.cpc-top{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.cpc-lang{font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .6rem;border-radius:4px;}
+.lang-html{background:rgba(255,107,107,.12);color:#FF6B6B;}
+.lang-css{background:rgba(43,107,255,.12);color:var(--blue-glow);}
+.lang-js{background:rgba(255,214,0,.12);color:#FFD600;}
+.cpc-body{padding:1rem 1.5rem;}
+.cpc-title{font-family:var(--display);font-size:1.05rem;font-weight:700;margin-bottom:.25rem;letter-spacing:-.02em;}
+.cpc-tutor{font-family:var(--mono);font-size:.7rem;color:var(--gray);margin-bottom:1rem;}
+.progress-section{margin-bottom:1rem;}
+.progress-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.65rem;color:var(--gray);margin-bottom:.4rem;}
+.progress-track{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+.p-complete{background:linear-gradient(90deg,var(--blue-mid),var(--blue-glow));}
+.p-mid{background:linear-gradient(90deg,var(--blue-glow),var(--red-bright));}
+.p-early{background:var(--blue-glow);}
+.cpc-footer{padding:.85rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+
+/* BTNS */
+.btn{font-family:var(--mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;padding:.5rem 1.1rem;border-radius:6px;cursor:none;transition:all .2s;border:none;}
+.btn-red{background:var(--red);color:var(--white);box-shadow:0 4px 20px rgba(217,4,41,.3);}
+.btn-red:hover{background:var(--red-bright);transform:translateY(-1px);}
+.btn-blue{background:var(--blue-mid);color:var(--white);}
+.btn-blue:hover{background:var(--blue-glow);}
+.btn-ghost{background:var(--surface);color:var(--gray);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--white);border-color:rgba(255,255,255,.2);}
+.btn-sm{padding:.35rem .8rem;font-size:.68rem;}
+
+/* LESSON VIEW */
+.lesson-sidebar{width:280px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;flex-shrink:0;}
+.lesson-sidebar-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);}
+.lesson-sidebar-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.lesson-sidebar-prog{font-family:var(--mono);font-size:.65rem;color:var(--gray);margin-top:.25rem;}
+.lesson-nav-item{display:flex;align-items:center;gap:.75rem;padding:.7rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.04);cursor:none;transition:background .15s;}
+.lesson-nav-item:last-child{border-bottom:none;}
+.lesson-nav-item:hover{background:rgba(255,255,255,.03);}
+.lesson-nav-item.active-lesson{background:rgba(255,10,53,.08);border-left:2px solid var(--red-bright);}
+.lesson-nav-item.completed-lesson{opacity:.7;}
+.lesson-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.6rem;flex-shrink:0;transition:all .2s;}
+.lesson-check.done{background:var(--green);border-color:var(--green);color:#000;}
+.lesson-check.current{border-color:var(--red-bright);background:rgba(255,10,53,.15);color:var(--red-bright);}
+.lesson-nav-text{flex:1;}
+.lesson-nav-name{font-size:.82rem;font-weight:500;}
+.lesson-nav-type{font-family:var(--mono);font-size:.62rem;color:var(--gray);}
+.lesson-main{flex:1;background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.lesson-main-header{padding:1.25rem 1.75rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.lesson-number{font-family:var(--mono);font-size:.68rem;color:var(--red-bright);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.25rem;}
+.lesson-title-big{font-family:var(--display);font-size:1.3rem;font-weight:700;letter-spacing:-.02em;}
+.lesson-content-area{padding:1.75rem;overflow-y:auto;max-height:calc(100vh - 260px);}
+.lesson-text{font-size:.95rem;line-height:1.8;color:rgba(255,255,255,.85);}
+.lesson-text h3{font-family:var(--display);font-size:1.1rem;font-weight:700;margin:1.5rem 0 .75rem;color:var(--white);}
+.lesson-text p{margin-bottom:1rem;}
+.lesson-text code{font-family:var(--mono);font-size:.82rem;background:rgba(43,107,255,.12);border:1px solid rgba(43,107,255,.2);padding:.15rem .4rem;border-radius:4px;color:var(--blue-glow);}
+.lesson-code-block{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:1.25rem;margin:1rem 0;font-family:var(--mono);font-size:.82rem;line-height:1.8;overflow-x:auto;}
+.lesson-code-block .kw{color:#7BB8FF;}
+.lesson-code-block .tag{color:var(--red-bright);}
+.lesson-code-block .str{color:#A8E6A3;}
+.lesson-code-block .cm{color:#4A5568;font-style:italic;}
+.lesson-img{width:100%;border-radius:8px;border:1px solid var(--border);margin:1rem 0;object-fit:cover;max-height:200px;background:linear-gradient(135deg,rgba(19,56,190,.3),rgba(217,4,41,.1));display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.72rem;color:var(--gray);}
+.lesson-nav-footer{padding:1.25rem 1.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+
+/* COMMENTS */
+.comments-section{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.comment-input-row{display:flex;gap:.75rem;margin-bottom:1.25rem;}
+.comment-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red-bright));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:.78rem;flex-shrink:0;}
+.comment-input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.65rem .9rem;font-family:var(--body);font-size:.875rem;color:var(--white);outline:none;cursor:none;transition:border-color .2s;}
+.comment-input:focus{border-color:var(--red-bright);box-shadow:0 0 0 3px rgba(255,10,53,.08);}
+.comment-input::placeholder{color:var(--gray2);}
+.comment-item{display:flex;gap:.75rem;margin-bottom:1rem;}
+.comment-body{flex:1;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;}
+.comment-author{font-family:var(--mono);font-size:.68rem;color:var(--blue-glow);margin-bottom:.35rem;letter-spacing:.05em;}
+.comment-text{font-size:.875rem;color:rgba(255,255,255,.8);line-height:1.5;}
+.comment-time{font-family:var(--mono);font-size:.62rem;color:var(--gray2);margin-top:.3rem;}
+
+/* QUIZ */
+.quiz-wrap{max-width:620px;}
+.quiz-header{margin-bottom:2rem;}
+.quiz-q-num{font-family:var(--mono);font-size:.68rem;color:var(--red-bright);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;}
+.quiz-question{font-family:var(--display);font-size:1.2rem;font-weight:700;line-height:1.4;margin-bottom:1.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.65rem;margin-bottom:2rem;}
+.quiz-option{display:flex;align-items:center;gap:.85rem;padding:.85rem 1.1rem;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;cursor:none;transition:all .2s;}
+.quiz-option:hover{border-color:rgba(255,10,53,.35);background:rgba(255,10,53,.05);}
+.quiz-option.selected{border-color:var(--red-bright);background:rgba(255,10,53,.1);}
+.quiz-option.correct{border-color:var(--green);background:rgba(34,197,94,.1);}
+.quiz-option.wrong{border-color:var(--red-bright);background:rgba(255,10,53,.08);}
+.option-letter{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.72rem;flex-shrink:0;}
+.quiz-option.selected .option-letter{background:var(--red-bright);border-color:var(--red-bright);color:#000;}
+.option-text{font-size:.9rem;}
+.quiz-progress{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+.quiz-prog-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
+.quiz-prog-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--red-bright));border-radius:3px;transition:width .4s ease;}
+
+/* CERT CARD */
+.cert-preview{background:linear-gradient(135deg,#0D1845 0%,#1A1050 50%,#0D1845 100%);border:1px solid rgba(43,107,255,.3);border-radius:16px;padding:2.5rem;position:relative;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.5);}
+.cert-preview::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--blue-mid),var(--blue-glow),var(--red-bright));}
+.cert-watermark{position:absolute;bottom:15px;right:20px;font-family:var(--display);font-size:4rem;font-weight:800;color:rgba(255,255,255,.025);letter-spacing:-.05em;line-height:1;}
+
+/* BROWSE COURSES */
+.browse-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;}
+.browse-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,transform .2s;cursor:none;}
+.browse-card:hover{border-color:rgba(255,10,53,.25);transform:translateY(-2px);}
+.browse-card-top{padding:1.25rem;border-bottom:1px solid var(--border);}
+.browse-card-body{padding:1rem 1.25rem;}
+.browse-card-footer{padding:.85rem 1.25rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.price-tag{font-family:var(--display);font-size:1.1rem;font-weight:700;}
+.price-tag .naira{color:var(--red-bright);font-size:.78rem;}
+.enroll-btn{font-family:var(--mono);font-size:.68rem;background:var(--red);color:var(--white);border:none;padding:.4rem .9rem;border-radius:5px;cursor:none;transition:background .2s;}
+.enroll-btn:hover{background:var(--red-bright);}
+.course-title-sm{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:.25rem;letter-spacing:-.02em;}
+.course-desc-sm{font-size:.82rem;color:var(--gray);line-height:1.55;}
+
+/* TABLE */
+.table-wrap{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);}
+thead th{font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);padding:.9rem 1.25rem;text-align:left;white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,.02);}
+td{padding:.85rem 1.25rem;font-size:.875rem;vertical-align:middle;}
+.badge{display:inline-flex;align-items:center;gap:.3rem;font-family:var(--mono);font-size:.63rem;letter-spacing:.06em;text-transform:uppercase;padding:.22rem .6rem;border-radius:4px;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.b-pass{background:rgba(34,197,94,.12);color:var(--green);}
+.b-pass::before{background:var(--green);}
+.b-fail{background:rgba(255,10,53,.1);color:var(--red-bright);}
+.b-fail::before{background:var(--red-bright);}
+.b-pend{background:rgba(245,158,11,.12);color:var(--amber);}
+.b-pend::before{background:var(--amber);}
+.b-ungraded{background:rgba(138,148,184,.1);color:var(--gray);}
+.b-ungraded::before{background:var(--gray);}
+
+/* FORM */
+.form-group{margin-bottom:1rem;}
+.form-label{display:block;font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin-bottom:.45rem;}
+.form-input,.form-select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.7rem .9rem;font-family:var(--body);font-size:.9rem;color:var(--white);outline:none;cursor:none;transition:border-color .2s;}
+.form-input::placeholder{color:var(--gray2);}
+.form-input:focus,.form-select:focus{border-color:var(--red-bright);box-shadow:0 0 0 3px rgba(255,10,53,.08);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A94B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;}
+.form-select option{background:var(--dark2);}
+.form-textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.7rem .9rem;font-family:var(--body);font-size:.9rem;color:var(--white);outline:none;cursor:none;resize:vertical;min-height:100px;transition:border-color .2s;}
+.form-textarea:focus{border-color:var(--red-bright);}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--dark2);border:1px solid rgba(255,10,53,.3);border-radius:8px;padding:.75rem 1.25rem;font-family:var(--mono);font-size:.78rem;color:var(--white);z-index:999;transform:translateX(120%);transition:transform .3s ease;box-shadow:0 20px 60px rgba(0,0,0,.4);max-width:300px;}
+.toast.show{transform:translateX(0);}
+.toast.success{border-color:rgba(34,197,94,.4);}
+.toast.error{border-color:rgba(255,10,53,.4);}
+
+/* SECTION HDR */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;}
+.section-hdr h2{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:-.02em;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
+.chart-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;}
+@media(max-width:1100px){.mini-stats{grid-template-columns:repeat(2,1fr);}.two-col{grid-template-columns:1fr;}}
+
+/* ── HAMBURGER ── */
+.hamburger-btn{display:none;position:fixed;top:14px;left:1rem;z-index:200;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:.5rem .6rem;cursor:none;flex-direction:column;gap:4px;}
+.hamburger-btn span{display:block;width:18px;height:2px;background:var(--white);border-radius:2px;transition:all .3s;}
+.hamburger-btn.open span:nth-child(1){transform:translateY(6px) rotate(45deg);}
+.hamburger-btn.open span:nth-child(2){opacity:0;}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+
+/* ── SIDEBAR OVERLAY ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:49;backdrop-filter:blur(2px);}
+.sidebar-overlay.open{display:block;}
+
+@media(max-width:768px){
+  /* Show hamburger */
+  .hamburger-btn{display:flex;}
+
+  /* Sidebar slides in from left */
+  .sidebar{transform:translateX(-100%);transition:transform .3s ease;z-index:50;}
+  .sidebar.open{transform:translateX(0) !important;}
+
+  /* Main takes full width */
+  .main{margin-left:0;}
+
+  /* Topbar adjustments */
+  .topbar{padding:0 1rem 0 3.5rem;}
+  .page-title{font-size:.95rem;}
+  .breadcrumb{display:none;}
+
+  /* Content padding */
+  .content{padding:1.25rem 1rem;}
+
+  /* Mini stats → 2 col */
+  .mini-stats{grid-template-columns:repeat(2,1fr);}
+
+  /* Welcome banner */
+  .welcome-banner::after{display:none;}
+  .welcome-title{font-size:1.3rem;}
+
+  /* Stack two-col */
+  .two-col{grid-template-columns:1fr;}
+
+  /* Tables scroll horizontally */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:560px;}
+
+  /* Lesson view stacks */
+  #panel-learn > div{flex-direction:column;}
+  .lesson-sidebar{width:100%;}
+
+  /* Browse grid */
+  .browse-grid{grid-template-columns:1fr;}
+
+  /* Quiz */
+  .quiz-wrap{max-width:100%;}
+
+  /* Cert preview */
+  .cert-preview{padding:1.5rem;}
+  .cert-preview > div:last-child{flex-direction:column;align-items:flex-start;}
+
+  /* Topbar right */
+  .topbar-right .browse-btn span{display:none;}
+  .browse-btn{padding:.4rem .7rem;}
+}
+@media(max-width:480px){
+  .mini-stats{grid-template-columns:repeat(2,1fr);}
+  .mini-stat-val{font-size:1.3rem;}
+  .welcome-title{font-size:1.1rem;}
+  .welcome-streak{font-size:.6rem;}
+  .content{padding:1rem .75rem;}
+}
+#auth-loading{position:fixed;inset:0;background:var(--dark);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}#auth-loading .logo-l{font-family:Syne,sans-serif;font-size:2rem;font-weight:800;color:#fff;letter-spacing:-.03em;}#auth-loading .logo-l span{color:#FF0A35;}#auth-loading .spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.1);border-top-color:#2B6BFF;border-radius:50%;animation:spin .7s linear infinite;}@keyframes spin{to{transform:rotate(360deg)}}#auth-loading.hide{opacity:0;pointer-events:none;transition:opacity .3s;}
+</style>
+</head>
+<body>
+<div id="auth-loading"><div class="logo-l">frNt<span>c</span>Oda</div><div class="spin"></div></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- HAMBURGER BUTTON (mobile only) -->
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</button>
+<!-- OVERLAY (closes sidebar on tap outside) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="logo">frNt<span>c</span>Oda</a>
+    <div class="logo-sub">Student Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <a class="nav-item active" onclick="showPanel('overview',this);return false;" href="#">
+      <span class="icon">🏠</span>Dashboard
+    </a>
+    <div class="nav-section-label">Learning</div>
+    <a class="nav-item" onclick="showPanel('mycourses',this);return false;" href="#">
+      <span class="icon">📚</span>My Courses
+    </a>
+    <a class="nav-item" onclick="showPanel('learn',this);return false;" href="#">
+      <span class="icon">▶️</span>Continue Learning
+    </a>
+    <a class="nav-item" onclick="showPanel('browse',this);return false;" href="#">
+      <span class="icon">🔍</span>Browse Courses
+    </a>
+    <div class="nav-section-label">Assessments</div>
+    <a class="nav-item" onclick="showPanel('assignments',this);return false;" href="#">
+      <span class="icon">📝</span>Assignments
+      <span class="nav-badge">2</span>
+    </a>
+    <a class="nav-item" onclick="showPanel('test',this);return false;" href="#">
+      <span class="icon">✅</span>Final Test
+    </a>
+    <div class="nav-section-label">Achievements</div>
+    <a class="nav-item" onclick="showPanel('certificates',this);return false;" href="#">
+      <span class="icon">🎓</span>Certificates
+    </a>
+    <a class="nav-item" onclick="showPanel('reviews',this);return false;" href="#">
+      <span class="icon">⭐</span>My Reviews
+    </a>
+    <div class="nav-section-label">Account</div>
+    <a class="nav-item" onclick="showPanel('profile',this);return false;" href="#">
+      <span class="icon">👤</span>My Profile
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="student-pill">
+      <div class="student-avatar">FN</div>
+      <div class="student-info">
+        <div class="student-name">Fatima Nuhu</div>
+        <div class="student-role">Student</div>
+      </div>
+      <button class="logout-btn" onclick="window.location.href='auth.html'">⏻</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div class="breadcrumb" id="topbar-crumb">Student / Overview</div>
+    </div>
+    <div class="topbar-right">
+      <button class="browse-btn" onclick="showPanel('browse',document.querySelector('[onclick*=\"browse\"]'))">+ Enroll in Course</button>
+      <button class="notif-btn"><span>🔔</span><div class="notif-dot"></div></button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ OVERVIEW ══ -->
+    <div class="panel active" id="panel-overview">
+      <div class="welcome-banner">
+        <div class="welcome-tag">Welcome back</div>
+        <div class="welcome-title">Hello, Fatima! 👋</div>
+        <div class="welcome-sub">You're 45% through HTML Fundamentals. Keep going — your certificate is waiting!</div>
+        <div class="welcome-streak">🔥 5-day learning streak</div>
+      </div>
+      <div class="mini-stats">
+        <div class="mini-stat"><div class="mini-stat-icon">📚</div><div class="mini-stat-val">1</div><div class="mini-stat-label">Enrolled Course</div></div>
+        <div class="mini-stat"><div class="mini-stat-icon">✅</div><div class="mini-stat-val" style="color:var(--blue-glow);">45%</div><div class="mini-stat-label">Progress</div></div>
+        <div class="mini-stat"><div class="mini-stat-icon">📝</div><div class="mini-stat-val" style="color:var(--amber);">2</div><div class="mini-stat-label">Due Assignments</div></div>
+        <div class="mini-stat"><div class="mini-stat-icon">🎓</div><div class="mini-stat-val" style="color:var(--gray2);">0</div><div class="mini-stat-label">Certificates</div></div>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="section-hdr"><h2>My Progress</h2><button class="btn btn-ghost btn-sm" onclick="showPanel('learn',document.querySelector('[onclick*=\"learn\"]'))">Continue →</button></div>
+          <div class="course-progress-card">
+            <div class="cpc-top">
+              <span class="cpc-lang lang-html">HTML</span>
+              <span style="font-family:var(--mono);font-size:.65rem;color:var(--green);background:rgba(34,197,94,.1);padding:.2rem .6rem;border-radius:4px;">Enrolled</span>
+            </div>
+            <div class="cpc-body">
+              <div class="cpc-title">HTML Fundamentals</div>
+              <div class="cpc-tutor">👨‍🏫 Chidi Okafor</div>
+              <div class="progress-section">
+                <div class="progress-label"><span>Overall Progress</span><span style="color:var(--blue-glow);">45%</span></div>
+                <div class="progress-track"><div class="progress-fill p-mid" style="width:45%;"></div></div>
+              </div>
+              <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+                <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);">Lessons: <strong style="color:var(--white);">5/12</strong></div>
+                <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);">Assignments: <strong style="color:var(--white);">1/4</strong></div>
+                <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);">Test: <strong style="color:var(--amber);">Not taken</strong></div>
+              </div>
+            </div>
+            <div class="cpc-footer">
+              <button class="btn btn-red btn-sm" onclick="showPanel('learn',document.querySelector('[onclick*=\"learn\"]'))">Continue Learning</button>
+              <button class="btn btn-ghost btn-sm" onclick="showPanel('test',document.querySelector('[onclick*=\"test\"]'))">Take Final Test</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-hdr"><h2>Pending Assignments</h2></div>
+          <div style="display:flex;flex-direction:column;gap:.75rem;">
+            <div style="background:var(--dark2);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;">
+              <div>
+                <div style="font-size:.875rem;font-weight:500;margin-bottom:.2rem;">Assignment 2 — HTML Tables</div>
+                <div style="font-family:var(--mono);font-size:.65rem;color:var(--amber);">Due in 2 days</div>
+              </div>
+              <button class="btn btn-red btn-sm" onclick="showPanel('assignments',document.querySelector('[onclick*=\"assignments\"]'))">Submit</button>
+            </div>
+            <div style="background:var(--dark2);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;">
+              <div>
+                <div style="font-size:.875rem;font-weight:500;margin-bottom:.2rem;">Assignment 3 — Semantic HTML</div>
+                <div style="font-family:var(--mono);font-size:.65rem;color:var(--amber);">Due in 5 days</div>
+              </div>
+              <button class="btn btn-red btn-sm" onclick="showPanel('assignments',document.querySelector('[onclick*=\"assignments\"]'))">Submit</button>
+            </div>
+            <div style="background:var(--dark2);border:1px solid rgba(34,197,94,.15);border-radius:10px;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;">
+              <div>
+                <div style="font-size:.875rem;font-weight:500;margin-bottom:.2rem;">Assignment 1 — First Webpage</div>
+                <div style="font-family:var(--mono);font-size:.65rem;color:var(--green);">Graded · 92/100 A</div>
+              </div>
+              <span class="badge b-pass">Done ✓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MY COURSES ══ -->
+    <div class="panel" id="panel-mycourses">
+      <div class="section-hdr"><h2>My Enrolled Courses</h2><button class="btn btn-red btn-sm" onclick="showPanel('browse',document.querySelector('[onclick*=\"browse\"]'))">+ Enroll More</button></div>
+      <div class="browse-grid">
+        <div class="course-progress-card">
+          <div class="cpc-top"><span class="cpc-lang lang-html">HTML</span><span style="font-family:var(--mono);font-size:.65rem;color:var(--green);background:rgba(34,197,94,.1);padding:.2rem .6rem;border-radius:4px;">Enrolled</span></div>
+          <div class="cpc-body">
+            <div class="cpc-title">HTML Fundamentals</div>
+            <div class="cpc-tutor">👨‍🏫 Chidi Okafor</div>
+            <div class="progress-section"><div class="progress-label"><span>Progress</span><span style="color:var(--blue-glow);">45%</span></div><div class="progress-track"><div class="progress-fill p-mid" style="width:45%;"></div></div></div>
+          </div>
+          <div class="cpc-footer"><button class="btn btn-red btn-sm" onclick="showPanel('learn',document.querySelector('[onclick*=\"learn\"]'))">Continue</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CONTINUE LEARNING (Lesson View) ══ -->
+    <div class="panel" id="panel-learn">
+      <div style="display:flex;gap:1.25rem;align-items:flex-start;">
+        <!-- Lesson nav -->
+        <div class="lesson-sidebar">
+          <div class="lesson-sidebar-header">
+            <div class="lesson-sidebar-title">HTML Fundamentals</div>
+            <div class="lesson-sidebar-prog">5 of 12 complete</div>
+            <div class="progress-track" style="margin-top:.5rem;height:4px;"><div class="progress-fill p-mid" style="width:45%;"></div></div>
+          </div>
+          <div id="lesson-nav">
+            <div class="lesson-nav-item completed-lesson" onclick="loadLesson(1)"><div class="lesson-check done">✓</div><div class="lesson-nav-text"><div class="lesson-nav-name">Intro to HTML</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item completed-lesson" onclick="loadLesson(2)"><div class="lesson-check done">✓</div><div class="lesson-nav-text"><div class="lesson-nav-name">HTML Tags & Elements</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item completed-lesson" onclick="loadLesson(3)"><div class="lesson-check done">✓</div><div class="lesson-nav-text"><div class="lesson-nav-name">HTML Document Structure</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item completed-lesson" onclick="loadLesson(4)"><div class="lesson-check done">✓</div><div class="lesson-nav-text"><div class="lesson-nav-name">Assignment 1 — First Webpage</div><div class="lesson-nav-type">📝 Assignment</div></div></div>
+            <div class="lesson-nav-item completed-lesson" onclick="loadLesson(5)"><div class="lesson-check done">✓</div><div class="lesson-nav-text"><div class="lesson-nav-name">HTML Links & Images</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item active-lesson" onclick="loadLesson(6)" id="current-lesson"><div class="lesson-check current">▶</div><div class="lesson-nav-text"><div class="lesson-nav-name">HTML Tables</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item" onclick="loadLesson(7)"><div class="lesson-check"></div><div class="lesson-nav-text"><div class="lesson-nav-name">Assignment 2 — HTML Tables</div><div class="lesson-nav-type">📝 Assignment</div></div></div>
+            <div class="lesson-nav-item" onclick="loadLesson(8)"><div class="lesson-check"></div><div class="lesson-nav-text"><div class="lesson-nav-name">HTML Forms</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item" onclick="loadLesson(9)"><div class="lesson-check"></div><div class="lesson-nav-text"><div class="lesson-nav-name">Semantic HTML</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item" onclick="loadLesson(10)"><div class="lesson-check"></div><div class="lesson-nav-text"><div class="lesson-nav-name">Assignment 3 — Semantic</div><div class="lesson-nav-type">📝 Assignment</div></div></div>
+            <div class="lesson-nav-item" onclick="loadLesson(11)"><div class="lesson-check"></div><div class="lesson-nav-text"><div class="lesson-nav-name">HTML Accessibility</div><div class="lesson-nav-type">📖 Lesson</div></div></div>
+            <div class="lesson-nav-item" onclick="loadLesson(12)"><div class="lesson-check"></div><div class="lesson-nav-text"><div class="lesson-nav-name">Final Test</div><div class="lesson-nav-type">✅ Test</div></div></div>
+          </div>
+        </div>
+        <!-- Lesson content -->
+        <div class="lesson-main" style="flex:1;">
+          <div class="lesson-main-header">
+            <div><div class="lesson-number">LESSON 6 OF 12</div><div class="lesson-title-big">HTML Tables</div></div>
+            <div style="display:flex;gap:.5rem;"><button class="btn btn-ghost btn-sm">← Prev</button><button class="btn btn-red btn-sm" onclick="markComplete()">Mark Complete ✓</button></div>
+          </div>
+          <div class="lesson-content-area">
+            <div class="lesson-text">
+              <p>HTML tables are used to display data in a grid of rows and columns. They're perfect for structured information like schedules, pricing tables, and comparison charts.</p>
+              <h3>Basic Table Structure</h3>
+              <p>Every HTML table uses the <code>&lt;table&gt;</code> element as the wrapper. Inside, you define rows with <code>&lt;tr&gt;</code>, header cells with <code>&lt;th&gt;</code>, and data cells with <code>&lt;td&gt;</code>.</p>
+              <div class="lesson-code-block">
+<span class="cm">&lt;!-- A simple HTML table --&gt;</span>
+<span class="tag">&lt;table&gt;</span>
+  <span class="tag">&lt;thead&gt;</span>
+    <span class="tag">&lt;tr&gt;</span>
+      <span class="tag">&lt;th&gt;</span><span class="str">Name</span><span class="tag">&lt;/th&gt;</span>
+      <span class="tag">&lt;th&gt;</span><span class="str">Age</span><span class="tag">&lt;/th&gt;</span>
+      <span class="tag">&lt;th&gt;</span><span class="str">City</span><span class="tag">&lt;/th&gt;</span>
+    <span class="tag">&lt;/tr&gt;</span>
+  <span class="tag">&lt;/thead&gt;</span>
+  <span class="tag">&lt;tbody&gt;</span>
+    <span class="tag">&lt;tr&gt;</span>
+      <span class="tag">&lt;td&gt;</span><span class="str">Fatima</span><span class="tag">&lt;/td&gt;</span>
+      <span class="tag">&lt;td&gt;</span><span class="str">22</span><span class="tag">&lt;/td&gt;</span>
+      <span class="tag">&lt;td&gt;</span><span class="str">Kano</span><span class="tag">&lt;/td&gt;</span>
+    <span class="tag">&lt;/tr&gt;</span>
+  <span class="tag">&lt;/tbody&gt;</span>
+<span class="tag">&lt;/table&gt;</span></div>
+              <h3>Table Sections</h3>
+              <p>Good practice is to divide your table into three sections: <code>&lt;thead&gt;</code> for the header row, <code>&lt;tbody&gt;</code> for the main data, and <code>&lt;tfoot&gt;</code> for summary rows. This improves readability and helps with styling.</p>
+              <div class="lesson-img" style="height:160px;">📊 &nbsp; [Table diagram image goes here]</div>
+              <h3>Merging Cells</h3>
+              <p>Use <code>colspan</code> to make a cell span multiple columns, and <code>rowspan</code> to span multiple rows. This is useful for creating complex table layouts.</p>
+            </div>
+            <!-- Comments -->
+            <div class="comments-section">
+              <div style="font-family:var(--display);font-size:.95rem;font-weight:700;margin-bottom:1rem;">Discussion (2 comments)</div>
+              <div class="comment-input-row">
+                <div class="comment-av">FN</div>
+                <input class="comment-input" type="text" placeholder="Ask a question or share a thought…" id="comment-inp">
+                <button class="btn btn-red btn-sm" onclick="postComment()">Post</button>
+              </div>
+              <div id="comments-list">
+                <div class="comment-item"><div class="comment-av" style="background:linear-gradient(135deg,var(--blue-mid),var(--blue-glow));">KB</div><div class="comment-body"><div class="comment-author">Kola Balogun</div><div class="comment-text">Does colspan work on thead cells too? I tried it and it worked fine.</div><div class="comment-time">2 hours ago</div></div></div>
+                <div class="comment-item"><div class="comment-av" style="background:linear-gradient(135deg,#16a34a,var(--green));">CO</div><div class="comment-body"><div class="comment-author" style="color:var(--green);">Chidi Okafor (Tutor)</div><div class="comment-text">Yes! colspan works on both thead and tbody cells. Great observation Kola 🎉</div><div class="comment-time">1 hour ago</div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="lesson-nav-footer">
+            <button class="btn btn-ghost btn-sm">← Previous Lesson</button>
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);">6 / 12</div>
+            <button class="btn btn-red btn-sm" onclick="markComplete()">Next Lesson →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ BROWSE COURSES ══ -->
+    <div class="panel" id="panel-browse">
+      <div class="section-hdr"><h2>All Courses</h2></div>
+      <div class="browse-grid">
+        <div class="browse-card">
+          <div class="browse-card-top"><span class="cpc-lang lang-html" style="font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .6rem;border-radius:4px;">HTML</span></div>
+          <div class="browse-card-body">
+            <div class="course-title-sm">HTML Fundamentals</div>
+            <div class="course-desc-sm">Tags, structure, forms, semantics & accessibility. The foundation of every webpage.</div>
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-top:.65rem;">12 Lessons · 4 Assignments · Final Test</div>
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--green);margin-top:.3rem;background:rgba(34,197,94,.1);display:inline-block;padding:.2rem .6rem;border-radius:4px;margin-top:.5rem;">Already enrolled</div>
+          </div>
+          <div class="browse-card-footer"><div class="price-tag"><span class="naira">₦</span>5,000</div><button class="enroll-btn" style="opacity:.5;cursor:not-allowed;">Enrolled</button></div>
+        </div>
+        <div class="browse-card">
+          <div class="browse-card-top"><span class="cpc-lang lang-css" style="font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .6rem;border-radius:4px;">CSS</span></div>
+          <div class="browse-card-body">
+            <div class="course-title-sm">CSS Mastery</div>
+            <div class="course-desc-sm">Flexbox, Grid, responsive design, animations and modern CSS techniques.</div>
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-top:.65rem;">15 Lessons · 5 Assignments · Final Test</div>
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-top:.3rem;">⭐ 4.6 · 43 students</div>
+          </div>
+          <div class="browse-card-footer"><div class="price-tag"><span class="naira">₦</span>6,500</div><button class="enroll-btn" onclick="enrollCourse(this,'CSS Mastery','₦6,500')">Enroll Now</button></div>
+        </div>
+        <div class="browse-card">
+          <div class="browse-card-top"><span class="cpc-lang lang-js" style="font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .6rem;border-radius:4px;">JavaScript</span></div>
+          <div class="browse-card-body">
+            <div class="course-title-sm">JavaScript Essentials</div>
+            <div class="course-desc-sm">Variables, functions, DOM, events and ES6+. Make your webpages interactive.</div>
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-top:.65rem;">20 Lessons · 6 Assignments · Final Test</div>
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-top:.3rem;">⭐ 4.9 · 39 students</div>
+          </div>
+          <div class="browse-card-footer"><div class="price-tag"><span class="naira">₦</span>8,000</div><button class="enroll-btn" onclick="enrollCourse(this,'JavaScript Essentials','₦8,000')">Enroll Now</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ASSIGNMENTS ══ -->
+    <div class="panel" id="panel-assignments">
+      <div class="section-hdr"><h2>My Assignments</h2></div>
+      <div class="table-wrap" style="margin-bottom:1.5rem;">
+        <table>
+          <thead><tr><th>Assignment</th><th>Course</th><th>Due</th><th>Status</th><th>Grade</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:500;">Assignment 1 — First Webpage</td><td>HTML</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--green);">Submitted</td><td><span class="badge b-pass">Graded</span></td><td style="font-family:var(--display);font-weight:700;color:var(--green);">92/100 · A</td><td><button class="btn btn-ghost btn-sm">View Feedback</button></td></tr>
+            <tr><td style="font-weight:500;">Assignment 2 — HTML Tables</td><td>HTML</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--amber);">Due in 2 days</td><td><span class="badge b-pend">Pending</span></td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray2);">—</td><td><button class="btn btn-red btn-sm" onclick="openSubmit('Assignment 2 — HTML Tables')">Submit Now</button></td></tr>
+            <tr><td style="font-weight:500;">Assignment 3 — Semantic HTML</td><td>HTML</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--amber);">Due in 5 days</td><td><span class="badge b-pend">Pending</span></td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray2);">—</td><td><button class="btn btn-red btn-sm" onclick="openSubmit('Assignment 3 — Semantic HTML')">Submit Now</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Submit form -->
+      <div id="submit-form" style="display:none;" class="chart-card">
+        <div style="font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:.25rem;" id="submit-form-title">Submit Assignment</div>
+        <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-bottom:1.25rem;">HTML Fundamentals</div>
+        <div class="form-group"><label class="form-label">Your Work / Answer</label><textarea class="form-textarea" style="min-height:130px;" placeholder="Paste your code or describe your solution here…" id="submission-text"></textarea></div>
+        <div style="display:flex;gap:.75rem;">
+          <button class="btn btn-red" onclick="submitAssignment()">Submit Assignment</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('submit-form').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ FINAL TEST ══ -->
+    <div class="panel" id="panel-test">
+      <div id="test-gate" style="">
+        <div style="max-width:560px;">
+          <div style="font-family:var(--mono);font-size:.7rem;color:var(--red-bright);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;">Final Assessment</div>
+          <div style="font-family:var(--display);font-size:1.6rem;font-weight:800;margin-bottom:.75rem;letter-spacing:-.03em;">HTML Fundamentals Final Test</div>
+          <div style="font-size:.9rem;color:var(--gray);line-height:1.7;margin-bottom:1.5rem;">Complete all lessons before taking the test. Score 70% or above to pass and unlock your certificate.</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+            <div class="chart-card" style="text-align:center;"><div style="font-size:1.5rem;margin-bottom:.3rem;">📝</div><div style="font-family:var(--display);font-size:1.2rem;font-weight:700;">20</div><div style="font-family:var(--mono);font-size:.62rem;color:var(--gray);">Questions</div></div>
+            <div class="chart-card" style="text-align:center;"><div style="font-size:1.5rem;margin-bottom:.3rem;">⏱️</div><div style="font-family:var(--display);font-size:1.2rem;font-weight:700;">30 min</div><div style="font-family:var(--mono);font-size:.62rem;color:var(--gray);">Time Limit</div></div>
+            <div class="chart-card" style="text-align:center;"><div style="font-size:1.5rem;margin-bottom:.3rem;">🏆</div><div style="font-family:var(--display);font-size:1.2rem;font-weight:700;">70%</div><div style="font-family:var(--mono);font-size:.62rem;color:var(--gray);">Pass Mark</div></div>
+          </div>
+          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.85rem 1rem;font-size:.85rem;color:var(--amber);margin-bottom:1.5rem;">⚠️ You've completed 45% of lessons. Complete all 12 lessons before the final test unlocks.</div>
+          <button class="btn btn-red" onclick="startTest()" style="opacity:.5;cursor:not-allowed;">Test Locked — Complete All Lessons First</button>
+          <button class="btn btn-ghost" style="margin-left:.75rem;" onclick="startTest()">Preview Test (Demo)</button>
+        </div>
+      </div>
+      <!-- Quiz -->
+      <div id="test-quiz" style="display:none;">
+        <div class="quiz-wrap">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;">
+            <div style="font-family:var(--display);font-size:1rem;font-weight:700;">HTML Fundamentals — Final Test</div>
+            <div style="font-family:var(--mono);font-size:.75rem;color:var(--amber);" id="quiz-timer">⏱ 29:54</div>
+          </div>
+          <div class="quiz-progress">
+            <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);white-space:nowrap;" id="q-counter">Question 1 of 5</div>
+            <div class="quiz-prog-track"><div class="quiz-prog-fill" id="q-progress" style="width:20%;"></div></div>
+          </div>
+          <div class="quiz-header">
+            <div class="quiz-q-num" id="q-num">QUESTION 1</div>
+            <div class="quiz-question" id="q-text">Which HTML tag is used to define the largest heading?</div>
+          </div>
+          <div class="quiz-options" id="q-options">
+            <div class="quiz-option" onclick="selectOption(this,false)"><div class="option-letter">A</div><div class="option-text"><code>&lt;h6&gt;</code></div></div>
+            <div class="quiz-option" onclick="selectOption(this,true)"><div class="option-letter">B</div><div class="option-text"><code>&lt;h1&gt;</code></div></div>
+            <div class="quiz-option" onclick="selectOption(this,false)"><div class="option-letter">C</div><div class="option-text"><code>&lt;header&gt;</code></div></div>
+            <div class="quiz-option" onclick="selectOption(this,false)"><div class="option-letter">D</div><div class="option-text"><code>&lt;title&gt;</code></div></div>
+          </div>
+          <button class="btn btn-red" id="next-q-btn" onclick="nextQuestion()" style="opacity:.4;pointer-events:none;">Next Question →</button>
+        </div>
+      </div>
+      <!-- Test result -->
+      <div id="test-result" style="display:none;max-width:520px;">
+        <div style="text-align:center;padding:2rem;">
+          <div style="font-size:3rem;margin-bottom:1rem;" id="result-emoji">🎉</div>
+          <div style="font-family:var(--display);font-size:2.5rem;font-weight:800;letter-spacing:-.04em;" id="result-score">80%</div>
+          <div style="font-family:var(--mono);font-size:.72rem;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin:.5rem 0;" id="result-status">PASSED!</div>
+          <div style="font-size:.9rem;color:var(--gray);margin-bottom:1.5rem;" id="result-msg">Congratulations! You passed the HTML Fundamentals test.</div>
+          <button class="btn btn-red" onclick="showPanel('certificates',document.querySelector('[onclick*=\"certificates\"]'))">Get Your Certificate →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CERTIFICATES ══ -->
+    <div class="panel" id="panel-certificates">
+      <div class="section-hdr"><h2>My Certificates</h2></div>
+      <div id="no-cert" style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:3rem;text-align:center;color:var(--gray);">
+        <div style="font-size:3rem;margin-bottom:1rem;">🎓</div>
+        <div style="font-family:var(--display);font-size:1.1rem;font-weight:700;margin-bottom:.5rem;">No Certificates Yet</div>
+        <div style="font-size:.875rem;max-width:360px;margin:0 auto .5rem;">Complete a course and pass the final test to earn your first certificate.</div>
+        <div style="font-family:var(--mono);font-size:.72rem;color:var(--amber);margin-top:.75rem;">HTML & CSS cert fee: ₦2,500 · JS cert fee: ₦3,500</div>
+      </div>
+      <div id="earned-cert" style="display:none;">
+        <div style="margin-bottom:1.5rem;">
+          <div style="font-size:.875rem;color:var(--gray);margin-bottom:1rem;">You passed! Pay the certificate fee to generate and download your verified certificate.</div>
+          <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:.85rem 1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+            <div><div style="font-weight:600;margin-bottom:.2rem;">HTML Fundamentals Certificate</div><div style="font-family:var(--mono);font-size:.72rem;color:var(--green);">Test passed · ₦2,500 fee</div></div>
+            <button class="btn btn-red" onclick="payCert()">Pay ₦2,500 → Get Certificate</button>
+          </div>
+        </div>
+        <div id="cert-display" style="display:none;">
+          <div class="cert-preview">
+            <div class="cert-watermark">frNtcOda</div>
+            <div style="font-family:var(--display);font-size:1.1rem;font-weight:800;margin-bottom:1.5rem;">frNt<span style="color:var(--red-bright);">c</span>Oda</div>
+            <div style="font-family:var(--mono);font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gray);margin-bottom:.4rem;">Certificate of Completion</div>
+            <div style="font-family:var(--display);font-size:2rem;font-weight:800;margin-bottom:.25rem;">Fatima Nuhu</div>
+            <div style="font-size:.9rem;color:var(--gray);margin-bottom:1.25rem;">Has successfully completed <strong style="color:var(--blue-glow);">HTML Fundamentals</strong></div>
+            <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(43,107,255,.4),transparent);margin:1.25rem 0;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+              <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+                <div><div style="font-family:var(--mono);font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.1em;">Instructor</div><div style="font-family:var(--mono);font-size:.75rem;">Chidi Okafor</div></div>
+                <div><div style="font-family:var(--mono);font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.1em;">Completed</div><div style="font-family:var(--mono);font-size:.75rem;">March 07, 2026</div></div>
+                <div><div style="font-family:var(--mono);font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.1em;">Cert ID</div><div style="font-family:var(--mono);font-size:.72rem;color:var(--blue-glow);">FNT-HTML-20260307-0052</div></div>
+              </div>
+              <div style="width:52px;height:52px;background:white;border-radius:6px;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:5px;flex-shrink:0;">
+                <div style="border-radius:1px;background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div>
+                <div style="background:white;"></div><div style="background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div><div style="background:white;"></div>
+                <div style="background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div>
+                <div style="background:white;"></div><div style="background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div><div style="background:white;"></div>
+                <div style="background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div><div style="background:white;"></div><div style="background:#111;"></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:1rem;display:flex;gap:.75rem;">
+            <button class="btn btn-blue" onclick="showToast('Certificate downloaded!','success')">⬇ Download PDF</button>
+            <button class="btn btn-ghost" onclick="showToast('Share link copied!','success')">🔗 Copy Share Link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REVIEWS ══ -->
+    <div class="panel" id="panel-reviews">
+      <div class="section-hdr">
+        <h2>My Reviews</h2>
+        <span style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Rate courses you've completed</span>
+      </div>
+
+      <!-- INFO BOX -->
+      <div style="background:rgba(43,107,255,.07);border:1px solid rgba(43,107,255,.2);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.85rem;color:var(--gray);line-height:1.6;">
+        ⭐ You can only review courses you have <strong style="color:var(--white);">enrolled in</strong>. Your review helps other students and gives tutors valuable feedback.
+      </div>
+
+      <!-- COURSES TO REVIEW -->
+      <div id="review-list">
+
+        <!-- Course 1 — already reviewed -->
+        <div class="chart-card" style="margin-bottom:1rem;">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+            <div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#E44D26,#F06529);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.7rem;font-weight:700;flex-shrink:0;">HTML</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:var(--display);font-weight:700;font-size:1rem;">HTML Fundamentals</div>
+              <div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">by Chidi Okafor &nbsp;·&nbsp; Completed</div>
+            </div>
+            <span style="font-family:var(--mono);font-size:.68rem;background:rgba(34,197,94,.12);color:#22C55E;border:1px solid rgba(34,197,94,.25);padding:.25rem .65rem;border-radius:100px;">✓ Reviewed</span>
+          </div>
+          <!-- Existing review display -->
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:1rem 1.25rem;">
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;">
+              <div id="display-stars-0" style="display:flex;gap:2px;font-size:1.1rem;">★★★★★</div>
+              <span style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">5 / 5 &nbsp;·&nbsp; Posted 3 days ago</span>
+            </div>
+            <p style="font-size:.88rem;color:var(--gray);line-height:1.6;margin-bottom:.75rem;">"Really enjoyed this course. Chidi explains HTML concepts in a way that's easy to understand, even for beginners. The assignments were very practical."</p>
+            <button onclick="editReview(0)" style="background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.35rem .85rem;font-family:var(--mono);font-size:.7rem;color:var(--gray);cursor:none;transition:all .2s;">Edit Review</button>
+          </div>
+        </div>
+
+        <!-- Course 2 — not yet reviewed -->
+        <div class="chart-card" style="margin-bottom:1rem;">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+            <div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#264DE4,#2965f1);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.7rem;font-weight:700;flex-shrink:0;">CSS</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-family:var(--display);font-weight:700;font-size:1rem;">CSS Styling & Layout</div>
+              <div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">by Chidi Okafor &nbsp;·&nbsp; In Progress</div>
+            </div>
+            <span style="font-family:var(--mono);font-size:.68rem;background:rgba(245,158,11,.1);color:#F59E0B;border:1px solid rgba(245,158,11,.25);padding:.25rem .65rem;border-radius:100px;">Not reviewed</span>
+          </div>
+          <!-- Star picker -->
+          <div id="review-form-1">
+            <div style="margin-bottom:1rem;">
+              <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;">Your Rating</div>
+              <div class="star-picker" id="stars-1" style="display:flex;gap:.35rem;">
+                <span onclick="setStars(1,1)" onmouseover="hoverStars(1,1)" onmouseout="unhoverStars(1)" style="font-size:1.8rem;cursor:none;transition:transform .15s;color:rgba(255,255,255,.2);">★</span>
+                <span onclick="setStars(1,2)" onmouseover="hoverStars(1,2)" onmouseout="unhoverStars(1)" style="font-size:1.8rem;cursor:none;transition:transform .15s;color:rgba(255,255,255,.2);">★</span>
+                <span onclick="setStars(1,3)" onmouseover="hoverStars(1,3)" onmouseout="unhoverStars(1)" style="font-size:1.8rem;cursor:none;transition:transform .15s;color:rgba(255,255,255,.2);">★</span>
+                <span onclick="setStars(1,4)" onmouseover="hoverStars(1,4)" onmouseout="unhoverStars(1)" style="font-size:1.8rem;cursor:none;transition:transform .15s;color:rgba(255,255,255,.2);">★</span>
+                <span onclick="setStars(1,5)" onmouseover="hoverStars(1,5)" onmouseout="unhoverStars(1)" style="font-size:1.8rem;cursor:none;transition:transform .15s;color:rgba(255,255,255,.2);">★</span>
+              </div>
+              <div id="star-label-1" style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-top:.35rem;min-height:1em;"></div>
+            </div>
+            <div style="margin-bottom:1rem;">
+              <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;">Your Review</div>
+              <textarea id="review-text-1" rows="3" placeholder="What did you think of this course? What did you learn? Would you recommend it?" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.75rem 1rem;font-family:var(--body);font-size:.88rem;color:var(--white);resize:vertical;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--blue-glow)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'"></textarea>
+              <div style="font-family:var(--mono);font-size:.65rem;color:var(--gray2);margin-top:.3rem;text-align:right;"><span id="char-count-1">0</span> / 500</div>
+            </div>
+            <button onclick="submitReview(1,'CSS Styling & Layout')" class="btn btn-red">Submit Review</button>
+          </div>
+        </div>
+
+        <!-- Empty state (shown when no enrolled courses) -->
+        <div id="review-empty" style="display:none;text-align:center;padding:3rem;color:var(--gray);">
+          <div style="font-size:2.5rem;margin-bottom:.75rem;">📝</div>
+          <div style="font-family:var(--display);font-weight:700;margin-bottom:.5rem;">No courses to review yet</div>
+          <p style="font-size:.875rem;">Enroll in a course first to leave a review.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ PROFILE ══ -->
+    <div class="panel" id="panel-profile">
+      <div class="section-hdr"><h2>My Profile</h2></div>
+      <div class="two-col">
+        <div class="chart-card">
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+            <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red-bright));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:1.5rem;">FN</div>
+            <div><div style="font-family:var(--display);font-size:1.2rem;font-weight:700;">Fatima Nuhu</div><div style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Student Account</div></div>
+          </div>
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" value="Fatima Nuhu"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" value="fatima@email.com"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="tel" value="+234 803 456 7890"></div>
+          <button class="btn btn-red" onclick="showToast('Profile updated ✓','success')">Save Changes</button>
+        </div>
+        <div class="chart-card">
+          <div style="font-family:var(--display);font-size:.95rem;font-weight:700;margin-bottom:1rem;">Change Password</div>
+          <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label class="form-label">New Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" placeholder="••••••••"></div>
+          <button class="btn btn-ghost" onclick="showToast('Password updated ✓','success')">Update Password</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// SIDEBAR TOGGLE (mobile)
+function toggleSidebar(){
+  const s=document.getElementById('sidebar');
+  const o=document.getElementById('sidebar-overlay');
+  const b=document.getElementById('hamburger-btn');
+  s.classList.toggle('open');
+  o.classList.toggle('open');
+  b.classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('hamburger-btn').classList.remove('open');
+}
+
+// CURSOR
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function a(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(a);})();
+document.querySelectorAll('a,button,input,select,textarea').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='16px';cur.style.height='16px';ring.style.width='40px';ring.style.height='40px';});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';ring.style.width='30px';ring.style.height='30px';});
+});
+
+const titles={overview:'Dashboard',mycourses:'My Courses',learn:'Continue Learning',browse:'Browse Courses',assignments:'Assignments',test:'Final Test',certificates:'Certificates',reviews:'My Reviews',profile:'My Profile'};
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('topbar-title').textContent=titles[id]||id;
+  document.getElementById('topbar-crumb').textContent='Student / '+(titles[id]||id);
+  closeSidebar(); // close on mobile after nav tap
+}
+
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>t.classList.remove('show'),3200);}
+
+// ── REVIEW / STAR RATING LOGIC ─────────────────
+const starRatings = {}; // stores chosen stars per course index
+const starLabels  = ['','😞 Poor','😐 Fair','🙂 Good','😊 Great','🤩 Excellent!'];
+
+function hoverStars(courseIdx, n) {
+  const stars = document.querySelectorAll(`#stars-${courseIdx} span`);
+  stars.forEach((s, i) => {
+    s.style.color    = i < n ? '#FBBF24' : 'rgba(255,255,255,.2)';
+    s.style.transform = i < n ? 'scale(1.15)' : 'scale(1)';
+  });
+  const lbl = document.getElementById(`star-label-${courseIdx}`);
+  if (lbl) lbl.textContent = starLabels[n] || '';
+}
+
+function unhoverStars(courseIdx) {
+  const chosen = starRatings[courseIdx] || 0;
+  const stars  = document.querySelectorAll(`#stars-${courseIdx} span`);
+  stars.forEach((s, i) => {
+    s.style.color     = i < chosen ? '#FBBF24' : 'rgba(255,255,255,.2)';
+    s.style.transform = 'scale(1)';
+  });
+  const lbl = document.getElementById(`star-label-${courseIdx}`);
+  if (lbl) lbl.textContent = chosen ? starLabels[chosen] : '';
+}
+
+function setStars(courseIdx, n) {
+  starRatings[courseIdx] = n;
+  unhoverStars(courseIdx);
+}
+
+function submitReview(courseIdx, courseName) {
+  const stars = starRatings[courseIdx] || 0;
+  const text  = document.getElementById(`review-text-${courseIdx}`)?.value.trim();
+  if (!stars)  return showToast('Please choose a star rating', 'error');
+  if (!text)   return showToast('Please write a short review', 'error');
+  if (text.length < 20) return showToast('Review too short — tell us more!', 'error');
+
+  // Replace form with submitted state
+  const form = document.getElementById(`review-form-${courseIdx}`);
+  const starsHtml = '★'.repeat(stars) + '<span style="color:rgba(255,255,255,.15);">' + '★'.repeat(5 - stars) + '</span>';
+  form.innerHTML = `
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:1rem 1.25rem;">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;">
+        <div style="font-size:1.1rem;color:#FBBF24;">${starsHtml}</div>
+        <span style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">${stars} / 5 &nbsp;·&nbsp; Just now</span>
+      </div>
+      <p style="font-size:.88rem;color:var(--gray);line-height:1.6;margin-bottom:.75rem;">"${text}"</p>
+      <button onclick="editReview(${courseIdx},'${courseName}','${text}',${stars})" style="background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.35rem .85rem;font-family:var(--mono);font-size:.7rem;color:var(--gray);cursor:none;">Edit Review</button>
+    </div>`;
+
+  // Update badge on the card
+  const card    = form.closest('.chart-card');
+  const badge   = card?.querySelector('span[style*="Not reviewed"]');
+  if (badge) {
+    badge.textContent = '✓ Reviewed';
+    badge.style.background = 'rgba(34,197,94,.12)';
+    badge.style.color      = '#22C55E';
+    badge.style.borderColor = 'rgba(34,197,94,.25)';
+  }
+
+  showToast(`Review for "${courseName}" submitted ✓`, 'success');
+}
+
+function editReview(courseIdx, courseName, existingText, existingStars) {
+  // Rebuild the form for editing
+  const form = document.getElementById(`review-form-${courseIdx}`) ||
+               document.querySelector(`#panel-reviews .chart-card:nth-child(${courseIdx+1}) > div:last-child`);
+  if (!form) return;
+  starRatings[courseIdx] = existingStars || 0;
+  const starsHtml = [1,2,3,4,5].map(n =>
+    `<span onclick="setStars(${courseIdx},${n})" onmouseover="hoverStars(${courseIdx},${n})" onmouseout="unhoverStars(${courseIdx})"
+      style="font-size:1.8rem;cursor:none;transition:transform .15s;color:${n<=(existingStars||0)?'#FBBF24':'rgba(255,255,255,.2)'};">★</span>`
+  ).join('');
+  form.id = `review-form-${courseIdx}`;
+  form.innerHTML = `
+    <div style="margin-bottom:1rem;">
+      <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;">Your Rating</div>
+      <div class="star-picker" id="stars-${courseIdx}" style="display:flex;gap:.35rem;">${starsHtml}</div>
+      <div id="star-label-${courseIdx}" style="font-family:var(--mono);font-size:.68rem;color:var(--gray);margin-top:.35rem;min-height:1em;">${starLabels[existingStars||0]||''}</div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-family:var(--mono);font-size:.68rem;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;">Your Review</div>
+      <textarea id="review-text-${courseIdx}" rows="3" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.75rem 1rem;font-family:var(--body);font-size:.88rem;color:var(--white);resize:vertical;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--blue-glow)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">${existingText||''}</textarea>
+    </div>
+    <div style="display:flex;gap:.75rem;">
+      <button onclick="submitReview(${courseIdx},'${courseName}')" class="btn btn-red">Update Review</button>
+      <button onclick="cancelEdit(${courseIdx},'${courseName}','${existingText}',${existingStars})" class="btn btn-ghost">Cancel</button>
+    </div>`;
+}
+
+function cancelEdit(courseIdx, courseName, text, stars) {
+  submitReview._cancel = true;
+  const starsHtml = '★'.repeat(stars) + '<span style="color:rgba(255,255,255,.15);">' + '★'.repeat(5-stars) + '</span>';
+  const form = document.getElementById(`review-form-${courseIdx}`);
+  if (!form) return;
+  form.innerHTML = `
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:1rem 1.25rem;">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;">
+        <div style="font-size:1.1rem;color:#FBBF24;">${starsHtml}</div>
+        <span style="font-family:var(--mono);font-size:.7rem;color:var(--gray);">${stars} / 5</span>
+      </div>
+      <p style="font-size:.88rem;color:var(--gray);line-height:1.6;margin-bottom:.75rem;">"${text}"</p>
+      <button onclick="editReview(${courseIdx},'${courseName}','${text}',${stars})" style="background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:.35rem .85rem;font-family:var(--mono);font-size:.7rem;color:var(--gray);cursor:none;">Edit Review</button>
+    </div>`;
+}
+
+// Character counter for review textareas
+document.addEventListener('input', e => {
+  if (!e.target.id?.startsWith('review-text-')) return;
+  const idx = e.target.id.replace('review-text-','');
+  const counter = document.getElementById(`char-count-${idx}`);
+  if (counter) counter.textContent = e.target.value.length;
+  if (e.target.value.length > 500) e.target.value = e.target.value.slice(0,500);
+});
+
+// LESSON
+function loadLesson(n){showToast('Loading lesson '+n,'');}
+function markComplete(){showToast('Lesson marked complete! ✓','success');}
+function postComment(){
+  const inp=document.getElementById('comment-inp');
+  const text=inp.value.trim();
+  if(!text){showToast('Type a comment first','error');return;}
+  const div=document.createElement('div');
+  div.className='comment-item';
+  div.innerHTML=`<div class="comment-av">FN</div><div class="comment-body"><div class="comment-author" style="color:var(--red-bright);">Fatima Nuhu (You)</div><div class="comment-text">${text}</div><div class="comment-time">Just now</div></div>`;
+  document.getElementById('comments-list').appendChild(div);
+  inp.value='';
+  showToast('Comment posted ✓','success');
+}
+
+// ENROLL
+function enrollCourse(btn,name,price){
+  if(confirm('Enroll in '+name+' for '+price+' via Flutterwave?')){
+    btn.textContent='Enrolled ✓'; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
+    showToast('Enrolled in '+name+'! ✓','success');
+  }
+}
+
+// SUBMIT ASSIGNMENT
+function openSubmit(title){
+  document.getElementById('submit-form-title').textContent='Submit: '+title;
+  document.getElementById('submit-form').style.display='block';
+  document.getElementById('submit-form').scrollIntoView({behavior:'smooth'});
+}
+function submitAssignment(){
+  const text=document.getElementById('submission-text').value.trim();
+  if(!text){showToast('Please write your submission','error');return;}
+  document.getElementById('submit-form').style.display='none';
+  document.getElementById('submission-text').value='';
+  showToast('Assignment submitted! ✓ Waiting for tutor to grade','success');
+}
+
+// QUIZ
+const questions=[
+  {q:'Which HTML tag is used to define the largest heading?',opts:['<h6>','<h1>','<header>','<title>'],correct:1},
+  {q:'Which tag creates a hyperlink in HTML?',opts:['<link>','<href>','<a>','<url>'],correct:2},
+  {q:'What does HTML stand for?',opts:['Hyperlinks and Text Markup Language','Hyper Text Markup Language','High Text Machine Language','Hyper Transfer Markup Language'],correct:1},
+  {q:'Which HTML element defines the body of a document?',opts:['<body>
+<div id="auth-loading"><div class="logo-l">frNt<span>c</span>Oda</div><div class="spin"></div></div>','<main>','<content>','<page>'],correct:0},
+  {q:'What attribute is used to specify the URL of an image?',opts:['href','link','src','url'],correct:2},
+];
+let currentQ=0,score=0,answered=false,timerInt;
+function startTest(){
+  document.getElementById('test-gate').style.display='none';
+  document.getElementById('test-quiz').style.display='block';
+  currentQ=0;score=0;
+  loadQuestion(0);
+  let secs=30*60;
+  timerInt=setInterval(()=>{
+    secs--;
+    const m=Math.floor(secs/60),s=secs%60;
+    document.getElementById('quiz-timer').textContent='⏱ '+m+':'+(s<10?'0':'')+s;
+    if(secs<=0){clearInterval(timerInt);endTest();}
+  },1000);
+}
+function loadQuestion(i){
+  answered=false;
+  const q=questions[i];
+  document.getElementById('q-num').textContent='QUESTION '+(i+1);
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-counter').textContent='Question '+(i+1)+' of '+questions.length;
+  document.getElementById('q-progress').style.width=(((i+1)/questions.length)*100)+'%';
+  const opts=document.getElementById('q-options');
+  opts.innerHTML=q.opts.map((o,j)=>`<div class="quiz-option" onclick="selectOption(this,${j===q.correct})"><div class="option-letter">${String.fromCharCode(65+j)}</div><div class="option-text"><code>${o}</code></div></div>`).join('');
+  const btn=document.getElementById('next-q-btn');
+  btn.style.opacity='.4';btn.style.pointerEvents='none';
+  btn.textContent=i===questions.length-1?'Submit Test →':'Next Question →';
+}
+function selectOption(el,correct){
+  if(answered)return;
+  answered=true;
+  document.querySelectorAll('.quiz-option').forEach(o=>o.style.pointerEvents='none');
+  el.classList.add(correct?'correct':'wrong');
+  if(correct)score++;
+  const btn=document.getElementById('next-q-btn');
+  btn.style.opacity='1';btn.style.pointerEvents='auto';
+}
+function nextQuestion(){
+  currentQ++;
+  if(currentQ>=questions.length){endTest();}
+  else{loadQuestion(currentQ);}
+}
+function endTest(){
+  clearInterval(timerInt);
+  const pct=Math.round((score/questions.length)*100);
+  const passed=pct>=70;
+  document.getElementById('test-quiz').style.display='none';
+  document.getElementById('test-result').style.display='block';
+  document.getElementById('result-score').textContent=pct+'%';
+  document.getElementById('result-emoji').textContent=passed?'🎉':'😔';
+  document.getElementById('result-status').textContent=passed?'PASSED!':'FAILED';
+  document.getElementById('result-status').style.color=passed?'var(--green)':'var(--red-bright)';
+  document.getElementById('result-msg').textContent=passed?'Congratulations! You passed the HTML Fundamentals test. You can now get your certificate!':'You scored below 70%. Review the lessons and try again.';
+  if(passed){
+    document.getElementById('no-cert').style.display='none';
+    document.getElementById('earned-cert').style.display='block';
+  }
+}
+
+// CERT
+function payCert(){
+  if(confirm('Pay ₦2,500 via Flutterwave for your HTML certificate?')){
+    showToast('Payment successful! Generating certificate…','success');
+    setTimeout(()=>{
+      document.getElementById('cert-display').style.display='block';
+      document.querySelector('#earned-cert > div:first-child').style.display='none';
+    },1000);
+  }
+}
+</script>
+
+<!-- ═══════════════════════════════════════════
+     FIREBASE — Student Dashboard
+     Handles: auth guard, load profile, load
+     enrolled courses, progress, assignments,
+     submissions, test results, certificates
+═══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
+  collection, getDocs, query, where, orderBy,
+  serverTimestamp, arrayUnion,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── PASTE YOUR FIREBASE CONFIG HERE ──────────
+  const firebaseConfig = {
+  apiKey:            "AIzaSyATtx9-URlB2-ZKc_4eXIlr8lQxg_dlJAQ",
+  authDomain:        "frnt-coda.firebaseapp.com",
+  projectId:         "frnt-coda",
+  storageBucket:     "frnt-coda.firebasestorage.app",
+  messagingSenderId: "564512970305",
+  appId:             "1:564512970305:web:d7fd66bdcf6b8268d4d8c0",
+};
+// ─────────────────────────────────────────────
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ── AUTH GUARD ────────────────────────────────
+// If not logged in → go to auth page
+// If wrong role → go to auth page
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "auth.html"; return; }
+
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) { await signOut(auth); window.location.href = "auth.html"; return; }
+
+  const profile = snap.data();
+  if (profile.role !== "student") { await signOut(auth); window.location.href = "auth.html"; return; }
+  if (profile.status === "suspended") {
+    alert("Your account has been suspended.");
+    await signOut(auth); window.location.href = "auth.html"; return;
+  }
+
+  // ✅ Logged in as student — load the dashboard
+  loadDashboard(user, profile);
+});
+
+// ── LOAD DASHBOARD ────────────────────────────
+async function loadDashboard(user, profile) {
+
+  // 1. Update name in sidebar + welcome banner
+  document.querySelector(".student-name").textContent = profile.firstName + " " + profile.lastName;
+  document.querySelector(".student-avatar").textContent =
+    (profile.firstName[0] + profile.lastName[0]).toUpperCase();
+
+  // Update welcome banner
+  const wb = document.querySelector(".welcome-title");
+  if (wb) wb.textContent = `Hello, ${profile.firstName}! 👋`;
+
+  // 2. Load enrolled courses
+  await loadEnrolledCourses(user.uid);
+
+  // 3. Load assignments
+  await loadAssignments(user.uid);
+
+  // 4. Load certificates
+  await loadCertificates(user.uid);
+
+  // 5. Load mini stats
+  await loadStats(user.uid);
+}
+
+// ── LOAD ENROLLED COURSES ─────────────────────
+async function loadEnrolledCourses(uid) {
+  const q    = query(collection(db, "enrollments"), where("studentId", "==", uid));
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
+    // No courses yet — show empty state
+    const grid = document.querySelector(".browse-grid");
+    if (grid) grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--gray);">
+        <div style="font-size:2.5rem;margin-bottom:.75rem;">📚</div>
+        <div style="font-family:var(--display);font-weight:700;margin-bottom:.5rem;">No courses yet</div>
+        <p style="font-size:.875rem;">Browse courses and enroll to get started!</p>
+      </div>`;
+    return;
+  }
+
+  // For each enrollment, fetch the course details
+  const enrollments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  for (const enroll of enrollments) {
+    const courseSnap = await getDoc(doc(db, "courses", enroll.courseId));
+    if (!courseSnap.exists()) continue;
+    const course = courseSnap.data();
+
+    // Update progress bar on overview panel
+    const progFill = document.querySelector(".prog-fill");
+    if (progFill) progFill.style.width = (enroll.progress || 0) + "%";
+
+    // Update progress text
+    const progLabels = document.querySelectorAll(".progress-label span");
+    if (progLabels.length >= 2) progLabels[1].textContent = (enroll.progress || 0) + "%";
+
+    // Update course title on overview
+    const cpcTitle = document.querySelector(".cpc-title");
+    if (cpcTitle) cpcTitle.textContent = course.title;
+
+    const cpcTutor = document.querySelector(".cpc-tutor");
+    if (cpcTutor) cpcTutor.textContent = "👨‍🏫 " + (course.tutorName || "");
+  }
+
+  // Update mini stat
+  document.querySelector(".mini-stat-val").textContent = enrollments.length;
+}
+
+// ── LOAD ASSIGNMENTS ──────────────────────────
+async function loadAssignments(uid) {
+  const q    = query(collection(db, "submissions"), where("studentId", "==", uid));
+  const snap = await getDocs(q);
+  const submissions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Count pending (ungraded)
+  const pending = submissions.filter(s => s.grade === null).length;
+  const badge   = document.querySelector(".nav-badge");
+  if (badge) badge.textContent = pending;
+
+  // Update assignment mini stat
+  const statVals = document.querySelectorAll(".mini-stat-val");
+  if (statVals[2]) {
+    statVals[2].textContent = pending;
+    statVals[2].style.color = pending > 0 ? "var(--amber)" : "var(--green)";
+  }
+}
+
+// ── LOAD CERTIFICATES ─────────────────────────
+async function loadCertificates(uid) {
+  const q    = query(collection(db, "certificates"), where("studentId", "==", uid));
+  const snap = await getDocs(q);
+  const certs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Update mini stat
+  const statVals = document.querySelectorAll(".mini-stat-val");
+  if (statVals[3]) {
+    statVals[3].textContent = certs.length;
+    statVals[3].style.color = certs.length > 0 ? "var(--green)" : "var(--gray2)";
+  }
+
+  if (certs.length === 0) return;
+
+  // Show earned certificates
+  const noCert     = document.getElementById("no-cert");
+  const earnedCert = document.getElementById("earned-cert");
+  const certDisplay = document.getElementById("cert-display");
+
+  if (noCert) noCert.style.display = "none";
+  if (earnedCert) earnedCert.style.display = "block";
+  if (certDisplay) {
+    certDisplay.style.display = "block";
+    const cert = certs[0];
+    // Populate certificate fields
+    const nameEl = certDisplay.querySelector(".detail-title, [style*='2rem']");
+    document.querySelectorAll("#cert-display *").forEach(el => {
+      if (el.textContent.trim() === "Fatima Nuhu") el.textContent = cert.studentName;
+      if (el.textContent.includes("FNT-HTML")) el.textContent = cert.certId;
+      if (el.textContent.trim() === "Chidi Okafor") el.textContent = cert.tutorName;
+    });
+  }
+}
+
+// ── LOAD STATS ────────────────────────────────
+async function loadStats(uid) {
+  // Test results
+  const q    = query(collection(db, "testResults"), where("studentId", "==", uid));
+  const snap = await getDocs(q);
+  // Stats are already handled in other load functions
+}
+
+// ── SUBMIT ASSIGNMENT (wired to Firebase) ────
+window.submitAssignmentToFirebase = async function(courseId, lessonId, text) {
+  const user = auth.currentUser;
+  if (!user) return showToast("Not logged in", "error");
+  try {
+    await addDoc(collection(db, "submissions"), {
+      studentId:   user.uid,
+      courseId,
+      lessonId,
+      text,
+      fileUrl:     null,
+      grade:       null,
+      feedback:    null,
+      submittedAt: serverTimestamp(),
+    });
+    showToast("Assignment submitted! ✓", "success");
+  } catch (e) {
+    showToast("Failed to submit: " + e.message, "error");
+  }
+};
+
+// ── SAVE TEST RESULT ──────────────────────────
+window.saveTestResult = async function(courseId, score, passed) {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    await addDoc(collection(db, "testResults"), {
+      studentId: user.uid,
+      courseId,
+      score,
+      passed,
+      takenAt:   serverTimestamp(),
+    });
+    if (passed) showToast("Test passed! Pay for your certificate 🎓", "success");
+  } catch (e) {
+    console.error("Save test result failed:", e);
+  }
+};
+
+// ── MARK LESSON COMPLETE ──────────────────────
+window.markLessonComplete = async function(enrollmentId, lessonId, totalLessons) {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    const ref  = doc(db, "enrollments", enrollmentId);
+    const snap = await getDoc(ref);
+    const data = snap.data();
+    const completed = [...new Set([...(data.completedLessons || []), lessonId])];
+    const progress  = Math.round((completed.length / totalLessons) * 100);
+    await updateDoc(ref, {
+      completedLessons: completed,
+      progress,
+      ...(progress === 100 ? { status: "completed" } : {}),
+    });
+    showToast("Lesson complete! ✓", "success");
+    return progress;
+  } catch (e) {
+    showToast("Could not save progress", "error");
+  }
+};
+
+// ── SAVE REVIEW TO FIREBASE ───────────────────
+// Called after submitReview() succeeds in the UI
+window.saveReviewToFirebase = async function(courseId, stars, text) {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    // 1. Save review document
+    await setDoc(doc(db, "courses", courseId, "reviews", user.uid), {
+      studentId:  user.uid,
+      courseId,
+      stars,
+      text,
+      postedAt:   serverTimestamp(),
+    });
+
+    // 2. Update course average rating
+    const courseSnap = await getDoc(doc(db, "courses", courseId));
+    if (courseSnap.exists()) {
+      const c        = courseSnap.data();
+      const newCount = (c.ratingCount || 0) + 1;
+      const newRating = (((c.rating || 0) * (c.ratingCount || 0)) + stars) / newCount;
+      await updateDoc(doc(db, "courses", courseId), {
+        rating:      Math.round(newRating * 10) / 10,
+        ratingCount: newCount,
+      });
+    }
+  } catch (e) {
+    console.error("Review save failed:", e);
+  }
+};
+
+// ══════════════════════════════════════════════
+//  FLUTTERWAVE SPLIT PAYMENT
+//  Your 7% cut is deducted automatically.
+//  Tutor receives 93% directly to their account.
+// ══════════════════════════════════════════════
+
+// ── YOUR FLUTTERWAVE PUBLIC KEY ───────────────
+const FLW_PUBLIC_KEY = "FLWPUBK_TEST-XXXXXXXXXXXXXXXXXXXX-X";
+// ─────────────────────────────────────────────
+// ── YOUR FLUTTERWAVE SUBACCOUNT ID ───────────
+// Go to: Flutterwave Dashboard → Settings → Subaccounts
+// Create a subaccount for frNtcOda (yourself)
+// The 7% platform fee is kept here automatically
+const PLATFORM_SUBACCOUNT = "RS_XXXXXXXXXXXXXXXXXXXXXXXX";
+// ─────────────────────────────────────────────
+
+// Load Flutterwave script once
+function loadFlw() {
+  return new Promise(resolve => {
+    if (window.FlutterwaveCheckout) return resolve();
+    const s  = document.createElement("script");
+    s.src    = "https://checkout.flutterwave.com/v3.js";
+    s.onload = resolve;
+    document.head.appendChild(s);
+  });
+}
+
+// ── PAY FOR COURSE (with split) ───────────────
+window.payCourse = async function(courseId, courseName, amount, tutorSubaccount) {
+  const user    = auth.currentUser;
+  if (!user) { window.location.href = "auth.html"; return; }
+
+  const profile = (await getDoc(doc(db, "users", user.uid))).data();
+
+  // Check not already enrolled
+  const existing = await getDocs(query(
+    collection(db, "enrollments"),
+    where("studentId", "==", user.uid),
+    where("courseId",  "==", courseId)
+  ));
+  if (!existing.empty) {
+    showToast("You're already enrolled in this course!", "");
+    return;
+  }
+
+  await loadFlw();
+
+  // Calculate split
+  // tutorSubaccount is stored on the course document in Firestore
+  // Admin gets 7%, tutor gets 93%
+  const tutorAmount = Math.round(amount * 0.93);
+
+  window.FlutterwaveCheckout({
+    public_key: FLW_PUBLIC_KEY,
+    tx_ref:     `frntcoda-course-${courseId}-${Date.now()}`,
+    amount,
+    currency:   "NGN",
+    payment_options: "card,ussd,bank_transfer",
+    customer: {
+      email: profile.email,
+      name:  profile.fullName || profile.firstName + " " + profile.lastName,
+    },
+    // ── SPLIT PAYMENT CONFIG ──────────────────
+    // Flutterwave automatically splits the money:
+    // - tutorSubaccount receives ₦tutorAmount (93%)
+    // - Your main account keeps the rest (7%)
+    subaccounts: tutorSubaccount ? [
+      {
+        id:                tutorSubaccount,
+        transaction_split_ratio: 93,
+      }
+    ] : [],
+    // ─────────────────────────────────────────
+    customizations: {
+      title:       "frNtcOda",
+      description: `Enroll: ${courseName}`,
+      logo:        "https://your-domain.com/logo.png",
+    },
+    callback: async (response) => {
+      if (response.status === "successful") {
+        try {
+          // 1. Record payment in Firestore
+          await addDoc(collection(db, "payments"), {
+            studentId: user.uid,
+            courseId,
+            type:      "course",
+            amount,
+            tutorShare: tutorAmount,
+            platformShare: amount - tutorAmount,
+            splitType:  tutorSubaccount ? "automatic" : "manual",
+            flwRef:    response.flw_ref,
+            status:    "success",
+            paidAt:    serverTimestamp(),
+          });
+
+          // 2. Create enrollment
+          await addDoc(collection(db, "enrollments"), {
+            studentId:        user.uid,
+            courseId,
+            status:           "active",
+            progress:         0,
+            completedLessons: [],
+            enrolledAt:       serverTimestamp(),
+          });
+
+          // 3. Increment course student count
+          await updateDoc(doc(db, "courses", courseId), {
+            studentsCount: (await getDoc(doc(db, "courses", courseId))).data().studentsCount + 1,
+          });
+
+          showToast(`Enrolled in ${courseName}! 🎉`, "success");
+          setTimeout(() => showPanel("mycourses", document.querySelector('[onclick*="mycourses"]')), 1500);
+
+        } catch (e) {
+          showToast("Payment received but setup failed. Contact support. Ref: " + response.flw_ref, "error");
+        }
+      }
+    },
+    onclose: () => {},
+  });
+};
+
+// ── PAY FOR CERTIFICATE (with split) ─────────
+window.payCertFirebase = async function(courseId, courseName, certFee, tutorSubaccount) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const profile = (await getDoc(doc(db, "users", user.uid))).data();
+
+  // Check test was passed first
+  const testSnap = await getDocs(query(
+    collection(db, "testResults"),
+    where("studentId", "==", user.uid),
+    where("courseId",  "==", courseId),
+    where("passed",    "==", true)
+  ));
+  if (testSnap.empty) {
+    showToast("You need to pass the final test first!", "error");
+    return;
+  }
+
+  // Check not already paid
+  const certSnap = await getDocs(query(
+    collection(db, "certificates"),
+    where("studentId", "==", user.uid),
+    where("courseId",  "==", courseId)
+  ));
+  if (!certSnap.empty) {
+    showToast("You already have this certificate!", "");
+    return;
+  }
+
+  await loadFlw();
+
+  const tutorShare = Math.round(certFee * 0.50);
+
+  window.FlutterwaveCheckout({
+    public_key: FLW_PUBLIC_KEY,
+    tx_ref:     `frntcoda-cert-${courseId}-${Date.now()}`,
+    amount:     certFee,
+    currency:   "NGN",
+    payment_options: "card,ussd,bank_transfer",
+    customer: {
+      email: profile.email,
+      name:  profile.fullName || profile.firstName + " " + profile.lastName,
+    },
+    subaccounts: tutorSubaccount ? [
+      { id: tutorSubaccount, transaction_split_ratio: 50 }
+    ] : [],
+    customizations: {
+      title:       "frNtcOda",
+      description: `Certificate: ${courseName}`,
+    },
+    callback: async (response) => {
+      if (response.status === "successful") {
+        try {
+          // Generate cert ID
+          const certId = `FNT-${courseId.slice(0,4).toUpperCase()}-${Date.now()}`;
+
+          // Fetch course for tutor name
+          const courseData = (await getDoc(doc(db, "courses", courseId))).data();
+
+          // Save certificate
+          await setDoc(doc(db, "certificates", certId), {
+            certId,
+            studentId:   user.uid,
+            courseId,
+            studentName: profile.fullName || profile.firstName + " " + profile.lastName,
+            tutorName:   courseData?.tutorName || "",
+            courseName,
+            certFee,
+            issuedAt:    serverTimestamp(),
+          });
+
+          // Record payment
+          await addDoc(collection(db, "payments"), {
+            studentId:     user.uid,
+            courseId,
+            type:          "certificate",
+            amount:        certFee,
+            tutorShare,
+            platformShare: certFee - tutorShare,
+            splitType:     tutorSubaccount ? "automatic" : "manual",
+            // if splitType is "manual", admin must pay tutor manually
+            flwRef:        response.flw_ref,
+            status:        "success",
+            paidAt:        serverTimestamp(),
+          });
+
+          showToast("Certificate issued! 🎓", "success");
+          // Re-render cert display
+          document.getElementById("cert-display").style.display = "block";
+          document.querySelectorAll("#cert-display *").forEach(el => {
+            if (el.textContent.includes("Fatima")) el.textContent = profile.fullName || profile.firstName;
+            if (el.textContent.includes("FNT-HTML")) el.textContent = certId;
+          });
+
+        } catch (e) {
+          showToast("Payment received but cert failed. Contact support. Ref: " + response.flw_ref, "error");
+        }
+      }
+    },
+    onclose: () => {},
+  });
+};
+
+// ── LOGOUT ────────────────────────────────────
+document.querySelector(".logout-btn").onclick = async () => {
+  await signOut(auth);
+  window.location.href = "auth.html";
+};
+</script>
+</body>
+</html>

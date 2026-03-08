@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>frNtcOda — Tutor Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#0A1F6E;--blue-mid:#1338BE;--blue-glow:#2B6BFF;
+  --red:#D90429;--red-bright:#FF0A35;
+  --white:#FFFFFF;--dark:#060D2B;--dark2:#0D1845;--dark3:#111C50;
+  --surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.08);
+  --gray:#8A94B8;--gray2:#4A5378;
+  --green:#22C55E;--amber:#F59E0B;--orange:#F97316;
+  --mono:'DM Mono',monospace;--display:'Syne',sans-serif;--body:'Outfit',sans-serif;
+  --sidebar:250px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--body);background:var(--dark);color:var(--white);display:flex;min-height:100vh;overflow-x:hidden;cursor:none;}
+.cursor{width:10px;height:10px;background:var(--blue-glow);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .2s,height .2s;}
+.cursor-ring{width:30px;height:30px;border:1.5px solid rgba(43,107,255,0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .25s,height .25s;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;}
+.sidebar-logo{padding:1.5rem 1.25rem 1rem;border-bottom:1px solid var(--border);}
+.logo{font-family:var(--display);font-size:1.4rem;font-weight:800;letter-spacing:-0.03em;color:var(--white);text-decoration:none;}
+.logo span{color:var(--red-bright);}
+.logo-sub{font-family:var(--mono);font-size:0.62rem;color:var(--blue-glow);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.2rem;}
+.sidebar-nav{flex:1;padding:1rem 0;overflow-y:auto;}
+.nav-section-label{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray2);padding:0.75rem 1.25rem 0.4rem;}
+.nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1.25rem;font-size:0.875rem;color:var(--gray);text-decoration:none;cursor:none;transition:all .2s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--white);background:rgba(255,255,255,0.04);}
+.nav-item.active{color:var(--white);background:rgba(43,107,255,0.1);border-left-color:var(--blue-glow);}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--amber);color:#000;font-family:var(--mono);font-size:0.6rem;padding:0.15rem 0.45rem;border-radius:10px;}
+.sidebar-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);}
+.tutor-pill{display:flex;align-items:center;gap:0.75rem;}
+.tutor-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue-mid),var(--blue-glow));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:0.85rem;flex-shrink:0;}
+.tutor-info{flex:1;min-width:0;}
+.tutor-name{font-size:0.85rem;font-weight:600;}
+.tutor-role{font-family:var(--mono);font-size:0.62rem;color:var(--blue-glow);letter-spacing:0.08em;}
+.logout-btn{background:none;border:none;cursor:none;color:var(--gray);font-size:0.9rem;transition:color .2s;}
+.logout-btn:hover{color:var(--red-bright);}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;}
+.topbar{height:64px;background:rgba(6,13,43,0.9);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:40;}
+.page-title{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:-0.02em;}
+.breadcrumb{font-family:var(--mono);font-size:0.7rem;color:var(--gray);}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.status-pill{display:flex;align-items:center;gap:0.4rem;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);padding:0.3rem 0.85rem;border-radius:20px;font-family:var(--mono);font-size:0.68rem;color:var(--green);letter-spacing:0.06em;}
+.status-pill::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.notif-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:none;font-size:1rem;position:relative;transition:border-color .2s;}
+.notif-btn:hover{border-color:rgba(43,107,255,0.4);}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--amber);border-radius:50%;border:1.5px solid var(--dark2);}
+
+/* CONTENT */
+.content{flex:1;padding:2rem;overflow-y:auto;}
+.panel{display:none;}
+.panel.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2rem;}
+.stat-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;transition:border-color .3s,transform .2s;}
+.stat-card:hover{border-color:rgba(43,107,255,0.3);transform:translateY(-2px);}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.blue::after{background:linear-gradient(90deg,var(--blue-mid),var(--blue-glow));}
+.stat-card.red::after{background:linear-gradient(90deg,var(--red),var(--red-bright));}
+.stat-card.green::after{background:linear-gradient(90deg,#16a34a,var(--green));}
+.stat-card.amber::after{background:linear-gradient(90deg,#d97706,var(--amber));}
+.stat-icon{font-size:1.5rem;margin-bottom:0.75rem;}
+.stat-val{font-family:var(--display);font-size:2rem;font-weight:800;letter-spacing:-0.04em;line-height:1;}
+.stat-label{font-family:var(--mono);font-size:0.65rem;color:var(--gray);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.35rem;}
+.stat-change{font-family:var(--mono);font-size:0.68rem;margin-top:0.5rem;color:var(--green);}
+
+/* SECTION HDR */
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;}
+.section-hdr h2{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:-0.02em;}
+
+/* BUTTONS */
+.btn{font-family:var(--mono);font-size:0.75rem;letter-spacing:0.06em;text-transform:uppercase;padding:0.5rem 1.1rem;border-radius:6px;cursor:none;transition:all .2s;border:none;}
+.btn-primary{background:var(--blue-mid);color:var(--white);box-shadow:0 4px 20px rgba(19,56,190,0.3);}
+.btn-primary:hover{background:var(--blue-glow);transform:translateY(-1px);}
+.btn-red{background:var(--red);color:var(--white);}
+.btn-red:hover{background:var(--red-bright);}
+.btn-ghost{background:var(--surface);color:var(--gray);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--white);border-color:rgba(255,255,255,0.2);}
+.btn-sm{padding:0.35rem 0.8rem;font-size:0.68rem;}
+
+/* COURSE CARDS */
+.courses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.25rem;}
+.course-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s,transform .2s;}
+.course-card:hover{border-color:rgba(43,107,255,0.25);transform:translateY(-2px);}
+.course-card-header{padding:1.25rem 1.5rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.course-lang-tag{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.25rem 0.65rem;border-radius:4px;}
+.lang-html{background:rgba(255,107,107,0.12);color:#FF6B6B;}
+.lang-css{background:rgba(43,107,255,0.12);color:var(--blue-glow);}
+.lang-js{background:rgba(255,214,0,0.12);color:#FFD600;}
+.course-status-badge{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.06em;text-transform:uppercase;padding:0.22rem 0.6rem;border-radius:4px;display:inline-flex;align-items:center;gap:.3rem;}
+.course-status-badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.csb-live{background:rgba(34,197,94,0.12);color:var(--green);}
+.csb-live::before{background:var(--green);}
+.csb-pending{background:rgba(245,158,11,0.12);color:var(--amber);}
+.csb-pending::before{background:var(--amber);}
+.csb-draft{background:rgba(138,148,184,0.12);color:var(--gray);}
+.csb-draft::before{background:var(--gray);}
+.course-card-body{padding:1rem 1.5rem;}
+.course-title{font-family:var(--display);font-size:1.05rem;font-weight:700;margin-bottom:0.35rem;letter-spacing:-0.02em;}
+.course-desc{font-size:0.83rem;color:var(--gray);line-height:1.55;margin-bottom:1rem;}
+.course-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem;}
+.meta-item{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;}
+.meta-item-label{font-family:var(--mono);font-size:0.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.2rem;}
+.meta-item-val{font-family:var(--display);font-size:0.9rem;font-weight:700;}
+.course-card-footer{padding:.85rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;flex-wrap:wrap;}
+
+/* LESSON BUILDER */
+.lesson-builder{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.lesson-builder-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.lesson-list{max-height:320px;overflow-y:auto;}
+.lesson-item{display:flex;align-items:center;gap:1rem;padding:.85rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;cursor:none;}
+.lesson-item:last-child{border-bottom:none;}
+.lesson-item:hover{background:rgba(255,255,255,0.02);}
+.lesson-num{font-family:var(--mono);font-size:0.7rem;color:var(--gray);width:22px;flex-shrink:0;}
+.lesson-icon{font-size:1rem;width:28px;text-align:center;flex-shrink:0;}
+.lesson-info{flex:1;}
+.lesson-name{font-size:.875rem;font-weight:500;}
+.lesson-type{font-family:var(--mono);font-size:0.65rem;color:var(--gray);}
+.lesson-actions{display:flex;gap:.35rem;}
+
+/* ACTION BUTTONS */
+.act-btn{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.05em;padding:0.28rem 0.65rem;border-radius:4px;border:1px solid;cursor:none;transition:all .2s;background:transparent;}
+.act-btn.edit{color:var(--blue-glow);border-color:rgba(43,107,255,0.3);}
+.act-btn.edit:hover{background:rgba(43,107,255,0.12);}
+.act-btn.del{color:var(--red-bright);border-color:rgba(255,10,53,0.3);}
+.act-btn.del:hover{background:rgba(255,10,53,0.1);}
+.act-btn.view{color:var(--gray);border-color:rgba(138,148,184,0.3);}
+.act-btn.view:hover{background:rgba(138,148,184,0.08);}
+
+/* TABLE */
+.table-wrap{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);}
+thead th{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);padding:.9rem 1.25rem;text-align:left;white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+td{padding:.85rem 1.25rem;font-size:.875rem;vertical-align:middle;}
+.user-cell{display:flex;align-items:center;gap:.75rem;}
+.user-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:.7rem;flex-shrink:0;}
+.av-b{background:linear-gradient(135deg,var(--blue-mid),var(--blue-glow));}
+.av-g{background:linear-gradient(135deg,#16a34a,var(--green));}
+.av-a{background:linear-gradient(135deg,#d97706,var(--amber));}
+.av-r{background:linear-gradient(135deg,var(--red),var(--red-bright));}
+.progress-bar{display:flex;align-items:center;gap:.5rem;}
+.prog-track{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;min-width:80px;}
+.prog-fill{height:100%;border-radius:3px;}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:.3rem;font-family:var(--mono);font-size:0.63rem;letter-spacing:0.06em;text-transform:uppercase;padding:.22rem .6rem;border-radius:4px;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.b-pass{background:rgba(34,197,94,.12);color:var(--green);}
+.b-pass::before{background:var(--green);}
+.b-fail{background:rgba(255,10,53,.1);color:var(--red-bright);}
+.b-fail::before{background:var(--red-bright);}
+.b-pend{background:rgba(245,158,11,.12);color:var(--amber);}
+.b-pend::before{background:var(--amber);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease;}
+.modal{background:var(--dark2);border:1px solid rgba(43,107,255,.25);border-radius:16px;padding:2rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.6);position:relative;animation:slideUp .3s ease;}
+.modal-wide{max-width:720px;}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.modal-title{font-family:var(--display);font-size:1.2rem;font-weight:700;margin-bottom:.25rem;}
+.modal-sub{font-family:var(--mono);font-size:.7rem;color:var(--gray);margin-bottom:1.5rem;letter-spacing:.03em;}
+.modal-close{position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;cursor:none;color:var(--gray);font-size:1.1rem;transition:color .2s;}
+.modal-close:hover{color:var(--white);}
+.form-group{margin-bottom:1rem;}
+.form-label{display:block;font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:.45rem;}
+.form-input,.form-select,.form-textarea{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:.7rem .9rem;font-family:var(--body);font-size:.9rem;color:var(--white);outline:none;cursor:none;transition:border-color .2s;}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--gray2);}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--blue-glow);box-shadow:0 0 0 3px rgba(43,107,255,.1);}
+.form-textarea{resize:vertical;min-height:80px;font-family:var(--body);}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A94B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;}
+.form-select option{background:var(--dark2);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.modal-footer{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;}
+.section-sep{height:1px;background:var(--border);margin:1.25rem 0;}
+
+/* LESSON TYPE TABS */
+.type-tabs{display:flex;gap:.4rem;margin-bottom:1rem;}
+.type-tab{font-family:var(--mono);font-size:.68rem;padding:.35rem .85rem;border-radius:5px;border:1px solid var(--border);color:var(--gray);background:var(--surface);cursor:none;transition:all .2s;}
+.type-tab.active{background:rgba(43,107,255,.15);border-color:rgba(43,107,255,.35);color:var(--blue-glow);}
+.type-content{display:none;}
+.type-content.active{display:block;}
+
+/* CHART */
+.chart-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;}
+.chart-title{font-family:var(--display);font-size:.95rem;font-weight:700;margin-bottom:.2rem;}
+.chart-sub{font-family:var(--mono);font-size:.63rem;color:var(--gray);margin-bottom:1.25rem;letter-spacing:.05em;}
+.bar-chart{display:flex;flex-direction:column;gap:.55rem;}
+.bar-row{display:flex;align-items:center;gap:.75rem;}
+.bar-label{font-family:var(--mono);font-size:.68rem;color:var(--gray);width:70px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;}
+.bar-val{font-family:var(--mono);font-size:.65rem;color:var(--gray);width:28px;text-align:right;}
+
+/* ACTIVITY */
+.activity-list{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.activity-item{display:flex;align-items:flex-start;gap:1rem;padding:.85rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.04);}
+.activity-item:last-child{border-bottom:none;}
+.activity-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+.ai-blue{background:rgba(43,107,255,.15);}
+.ai-green{background:rgba(34,197,94,.15);}
+.ai-amber{background:rgba(245,158,11,.15);}
+.ai-red{background:rgba(217,4,41,.15);}
+.activity-text{font-size:.865rem;line-height:1.4;}
+.activity-text strong{color:var(--white);}
+.activity-time{font-family:var(--mono);font-size:.63rem;color:var(--gray2);margin-top:.2rem;}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--dark2);border:1px solid rgba(43,107,255,.3);border-radius:8px;padding:.75rem 1.25rem;font-family:var(--mono);font-size:.78rem;color:var(--white);z-index:999;transform:translateX(120%);transition:transform .3s ease;box-shadow:0 20px 60px rgba(0,0,0,.4);max-width:300px;}
+.toast.show{transform:translateX(0);}
+.toast.success{border-color:rgba(34,197,94,.4);}
+.toast.error{border-color:rgba(255,10,53,.4);}
+.toast.warning{border-color:rgba(245,158,11,.4);}
+
+/* GRID HELPERS */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;}
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,1fr);}.two-col{grid-template-columns:1fr;}}
+
+.hamburger-btn{display:none;position:fixed;top:14px;left:1rem;z-index:200;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:.5rem .6rem;cursor:none;flex-direction:column;gap:4px;}
+.hamburger-btn span{display:block;width:18px;height:2px;background:var(--white);border-radius:2px;transition:all .3s;}
+.hamburger-btn.open span:nth-child(1){transform:translateY(6px) rotate(45deg);}
+.hamburger-btn.open span:nth-child(2){opacity:0;}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:49;backdrop-filter:blur(2px);}
+.sidebar-overlay.open{display:block;}
+
+@media(max-width:768px){
+  .hamburger-btn{display:flex;}
+  .sidebar{transform:translateX(-100%);transition:transform .3s ease;z-index:50;}
+  .sidebar.open{transform:translateX(0) !important;}
+  .main{margin-left:0;}
+  .topbar{padding:0 1rem 0 3.5rem;}
+  .content{padding:1.25rem 1rem;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .two-col{grid-template-columns:1fr;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:560px;}
+  .courses-grid{grid-template-columns:1fr;}
+  .course-card{width:100%;}
+  .builder-body{flex-direction:column;}
+  .builder-sidebar{width:100%;}
+  .page-title{font-size:.95rem;}
+  .breadcrumb{display:none;}
+  .topbar-right .topbar-btn span{display:none;}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .stat-val{font-size:1.5rem;}
+  .content{padding:1rem .75rem;}
+}
+#auth-loading{position:fixed;inset:0;background:var(--dark);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}#auth-loading .logo-l{font-family:Syne,sans-serif;font-size:2rem;font-weight:800;color:#fff;letter-spacing:-.03em;}#auth-loading .logo-l span{color:#FF0A35;}#auth-loading .spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.1);border-top-color:#2B6BFF;border-radius:50%;animation:spin .7s linear infinite;}@keyframes spin{to{transform:rotate(360deg)}}#auth-loading.hide{opacity:0;pointer-events:none;transition:opacity .3s;}
+</style>
+</head>
+<body>
+<div id="auth-loading"><div class="logo-l">frNt<span>c</span>Oda</div><div class="spin"></div></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="logo">frNt<span>c</span>Oda</a>
+    <div class="logo-sub">Tutor Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <a class="nav-item active" onclick="showPanel('overview',this);return false;" href="#">
+      <span class="icon">📊</span>Dashboard
+    </a>
+    <div class="nav-section-label">Courses</div>
+    <a class="nav-item" onclick="showPanel('courses',this);return false;" href="#">
+      <span class="icon">📚</span>My Courses
+    </a>
+    <a class="nav-item" onclick="showPanel('builder',this);return false;" href="#">
+      <span class="icon">✏️</span>Course Builder
+    </a>
+    <div class="nav-section-label">Students</div>
+    <a class="nav-item" onclick="showPanel('students',this);return false;" href="#">
+      <span class="icon">🎓</span>My Students
+    </a>
+    <a class="nav-item" onclick="showPanel('submissions',this);return false;" href="#">
+      <span class="icon">📝</span>Submissions
+      <span class="nav-badge">4</span>
+    </a>
+    <a class="nav-item" onclick="showPanel('results',this);return false;" href="#">
+      <span class="icon">✅</span>Test Results
+    </a>
+    <div class="nav-section-label">Earnings</div>
+    <a class="nav-item" onclick="showPanel('earnings',this);return false;" href="#">
+      <span class="icon">💰</span>Earnings
+    </a>
+    <div class="nav-section-label">Account</div>
+    <a class="nav-item" onclick="showPanel('profile',this);return false;" href="#">
+      <span class="icon">👤</span>My Profile
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="tutor-pill">
+      <div class="tutor-avatar">CO</div>
+      <div class="tutor-info">
+        <div class="tutor-name">Chidi Okafor</div>
+        <div class="tutor-role">Tutor · HTML & CSS</div>
+      </div>
+      <button class="logout-btn" onclick="window.location.href='auth.html'">⏻</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div class="breadcrumb" id="topbar-crumb">Tutor / Overview</div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill">Account Active</div>
+      <button class="notif-btn"><span>🔔</span><div class="notif-dot"></div></button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ OVERVIEW ══ -->
+    <div class="panel active" id="panel-overview">
+      <div class="stats-grid">
+        <div class="stat-card blue"><div class="stat-icon">📚</div><div class="stat-val">2</div><div class="stat-label">Live Courses</div><div class="stat-change">1 pending review</div></div>
+        <div class="stat-card green"><div class="stat-icon">🎓</div><div class="stat-val">103</div><div class="stat-label">Total Students</div><div class="stat-change">↑ +8 this week</div></div>
+        <div class="stat-card amber"><div class="stat-icon">📝</div><div class="stat-val">4</div><div class="stat-label">Pending Submissions</div><div class="stat-change" style="color:var(--amber)">Needs grading</div></div>
+        <div class="stat-card red"><div class="stat-icon">💰</div><div class="stat-val">₦318k</div><div class="stat-label">Total Earnings</div><div class="stat-change">↑ +₦42k this month</div></div>
+      </div>
+      <div class="two-col" style="margin-bottom:1.5rem;">
+        <div class="chart-card">
+          <div class="chart-title">Student Enrollments</div>
+          <div class="chart-sub">Last 6 months</div>
+          <div class="bar-chart">
+            <div class="bar-row"><div class="bar-label">Oct</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--blue-glow);"></div></div><div class="bar-val">8</div></div>
+            <div class="bar-row"><div class="bar-label">Nov</div><div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--blue-glow);"></div></div><div class="bar-val">13</div></div>
+            <div class="bar-row"><div class="bar-label">Dec</div><div class="bar-track"><div class="bar-fill" style="width:30%;background:var(--blue-glow);"></div></div><div class="bar-val">6</div></div>
+            <div class="bar-row"><div class="bar-label">Jan</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--blue-glow);"></div></div><div class="bar-val">16</div></div>
+            <div class="bar-row"><div class="bar-label">Feb</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,var(--blue-glow),var(--red-bright));"></div></div><div class="bar-val">20</div></div>
+            <div class="bar-row"><div class="bar-label">Mar</div><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--blue-glow);"></div></div><div class="bar-val">18</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="section-hdr"><h2>Recent Activity</h2></div>
+          <div class="activity-list">
+            <div class="activity-item"><div class="activity-icon ai-green">✅</div><div><div class="activity-text"><strong>Kola Balogun</strong> submitted HTML Assignment 3</div><div class="activity-time">12 mins ago</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-blue">🎓</div><div><div class="activity-text"><strong>Amaka Obi</strong> passed your HTML final test</div><div class="activity-time">1 hour ago</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-amber">💬</div><div><div class="activity-text">New comment on <strong>Lesson 4: HTML Forms</strong></div><div class="activity-time">3 hours ago</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-green">🎓</div><div><div class="activity-text"><strong>2 new students</strong> enrolled in HTML Fundamentals</div><div class="activity-time">5 hours ago</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-red">🛡️</div><div><div class="activity-text">Admin approved your <strong>CSS Mastery</strong> course</div><div class="activity-time">Yesterday</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MY COURSES ══ -->
+    <div class="panel" id="panel-courses">
+      <div class="section-hdr">
+        <h2>My Courses</h2>
+        <button class="btn btn-primary" onclick="showPanel('builder',document.querySelector('[onclick*=\"builder\"]'));openNewCourse()">+ New Course</button>
+      </div>
+      <div class="courses-grid">
+        <!-- HTML Course -->
+        <div class="course-card">
+          <div class="course-card-header">
+            <span class="course-lang-tag lang-html">HTML</span>
+            <span class="course-status-badge csb-live">Live</span>
+          </div>
+          <div class="course-card-body">
+            <div class="course-title">HTML Fundamentals</div>
+            <div class="course-desc">Build the skeleton of any webpage. Tags, structure, forms, semantics and accessibility.</div>
+            <div class="course-meta-grid">
+              <div class="meta-item"><div class="meta-item-label">Lessons</div><div class="meta-item-val">12</div></div>
+              <div class="meta-item"><div class="meta-item-label">Students</div><div class="meta-item-val">60</div></div>
+              <div class="meta-item"><div class="meta-item-label">Course Fee</div><div class="meta-item-val" style="color:var(--green);">₦5,000</div></div>
+              <div class="meta-item"><div class="meta-item-label">Rating</div><div class="meta-item-val">⭐ 4.8</div></div>
+            </div>
+          </div>
+          <div class="course-card-footer">
+            <button class="btn btn-primary btn-sm" onclick="showPanel('builder',null)">Edit Course</button>
+            <button class="btn btn-ghost btn-sm" onclick="showPanel('students',null)">View Students</button>
+            <button class="act-btn del" onclick="removeCourseCard(this)">Delete</button>
+          </div>
+        </div>
+        <!-- CSS Course -->
+        <div class="course-card">
+          <div class="course-card-header">
+            <span class="course-lang-tag lang-css">CSS</span>
+            <span class="course-status-badge csb-live">Live</span>
+          </div>
+          <div class="course-card-body">
+            <div class="course-title">CSS Mastery</div>
+            <div class="course-desc">Style, animate and layout modern websites. Flexbox, Grid, responsive design and animations.</div>
+            <div class="course-meta-grid">
+              <div class="meta-item"><div class="meta-item-label">Lessons</div><div class="meta-item-val">15</div></div>
+              <div class="meta-item"><div class="meta-item-label">Students</div><div class="meta-item-val">43</div></div>
+              <div class="meta-item"><div class="meta-item-label">Course Fee</div><div class="meta-item-val" style="color:var(--green);">₦6,500</div></div>
+              <div class="meta-item"><div class="meta-item-label">Rating</div><div class="meta-item-val">⭐ 4.6</div></div>
+            </div>
+          </div>
+          <div class="course-card-footer">
+            <button class="btn btn-primary btn-sm">Edit Course</button>
+            <button class="btn btn-ghost btn-sm">View Students</button>
+            <button class="act-btn del" onclick="removeCourseCard(this)">Delete</button>
+          </div>
+        </div>
+        <!-- CSS Animations - Pending -->
+        <div class="course-card" style="border-color:rgba(245,158,11,0.3);">
+          <div class="course-card-header">
+            <span class="course-lang-tag lang-css">CSS</span>
+            <span class="course-status-badge csb-pending">Pending Review</span>
+          </div>
+          <div class="course-card-body">
+            <div class="course-title">CSS Animations</div>
+            <div class="course-desc">Advanced animation techniques using keyframes, transitions, and the Web Animations API.</div>
+            <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:.65rem .85rem;font-size:.8rem;color:var(--amber);margin-bottom:.85rem;">⏳ Awaiting admin approval before going live</div>
+            <div class="course-meta-grid">
+              <div class="meta-item"><div class="meta-item-label">Lessons</div><div class="meta-item-val">8</div></div>
+              <div class="meta-item"><div class="meta-item-label">Students</div><div class="meta-item-val">0</div></div>
+              <div class="meta-item"><div class="meta-item-label">Course Fee</div><div class="meta-item-val" style="color:var(--amber);">₦5,500</div></div>
+              <div class="meta-item"><div class="meta-item-label">Status</div><div class="meta-item-val" style="font-size:.75rem;color:var(--amber);">In Review</div></div>
+            </div>
+          </div>
+          <div class="course-card-footer">
+            <button class="btn btn-ghost btn-sm">Edit Draft</button>
+            <button class="act-btn del" onclick="removeCourseCard(this)">Delete</button>
+          </div>
+        </div>
+        <!-- Add new card -->
+        <div class="course-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:280px;cursor:none;" onclick="showPanel('builder',null);openNewCourse()">
+          <div style="text-align:center;color:var(--gray2);">
+            <div style="font-size:2.5rem;margin-bottom:.75rem;opacity:.5;">+</div>
+            <div style="font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;">Create New Course</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ COURSE BUILDER ══ -->
+    <div class="panel" id="panel-builder">
+      <div class="section-hdr">
+        <h2>Course Builder</h2>
+        <div style="display:flex;gap:.5rem;">
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Draft saved','info')">Save Draft</button>
+          <button class="btn btn-primary" onclick="submitForReview()">Submit for Review →</button>
+        </div>
+      </div>
+      <div class="two-col">
+        <!-- Left: Course info -->
+        <div>
+          <div class="chart-card" style="margin-bottom:1.25rem;">
+            <div class="chart-title" style="margin-bottom:1rem;">Course Details</div>
+            <div class="form-group"><label class="form-label">Course Title</label><input class="form-input" type="text" placeholder="e.g. HTML Fundamentals" id="bc-title"></div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Language</label>
+                <select class="form-select" id="bc-lang">
+                  <option>HTML</option><option>CSS</option><option>JavaScript</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Course Fee (₦)</label><input class="form-input" type="number" placeholder="5000" id="bc-fee"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Course Description</label><textarea class="form-textarea" placeholder="Describe what students will learn…" id="bc-desc"></textarea></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title" style="margin-bottom:1rem;">Add Lesson / Assignment / Test</div>
+            <div class="type-tabs">
+              <button class="type-tab active" onclick="switchType('lesson',this)">📖 Lesson</button>
+              <button class="type-tab" onclick="switchType('assignment',this)">📝 Assignment</button>
+              <button class="type-tab" onclick="switchType('test',this)">✅ Final Test</button>
+            </div>
+            <!-- Lesson form -->
+            <div class="type-content active" id="type-lesson">
+              <div class="form-group"><label class="form-label">Lesson Title</label><input class="form-input" type="text" placeholder="e.g. Introduction to HTML Tags" id="l-title"></div>
+              <div class="form-group"><label class="form-label">Lesson Content</label><textarea class="form-textarea" style="min-height:100px;" placeholder="Write the lesson text content here…" id="l-content"></textarea></div>
+              <div class="form-group"><label class="form-label">Image URL (optional)</label><input class="form-input" type="url" placeholder="https://…" id="l-img"></div>
+              <button class="btn btn-primary" onclick="addLessonItem('📖','Lesson')">Add Lesson</button>
+            </div>
+            <!-- Assignment form -->
+            <div class="type-content" id="type-assignment">
+              <div class="form-group"><label class="form-label">Assignment Title</label><input class="form-input" type="text" placeholder="e.g. Build a Basic Webpage" id="a-title"></div>
+              <div class="form-group"><label class="form-label">Instructions</label><textarea class="form-textarea" style="min-height:100px;" placeholder="Describe what students must submit…" id="a-inst"></textarea></div>
+              <div class="form-group"><label class="form-label">Due (days after enrolment)</label><input class="form-input" type="number" placeholder="7" id="a-due"></div>
+              <button class="btn btn-primary" onclick="addLessonItem('📝','Assignment')">Add Assignment</button>
+            </div>
+            <!-- Test form -->
+            <div class="type-content" id="type-test">
+              <div style="background:rgba(43,107,255,.08);border:1px solid rgba(43,107,255,.2);border-radius:8px;padding:.85rem 1rem;font-size:.82rem;color:var(--gray);margin-bottom:1rem;">ℹ️ Only one final test per course. Students must complete all lessons first.</div>
+              <div class="form-group"><label class="form-label">Number of Questions</label><input class="form-input" type="number" placeholder="20" id="t-qcount"></div>
+              <div class="form-group"><label class="form-label">Pass Mark (%)</label><input class="form-input" type="number" placeholder="70" id="t-pass"></div>
+              <div class="form-group"><label class="form-label">Time Limit (minutes)</label><input class="form-input" type="number" placeholder="30" id="t-time"></div>
+              <button class="btn btn-primary" onclick="addLessonItem('✅','Final Test')">Add Final Test</button>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Lesson list -->
+        <div>
+          <div class="lesson-builder">
+            <div class="lesson-builder-header">
+              <div>
+                <div style="font-family:var(--display);font-size:.95rem;font-weight:700;">Course Outline</div>
+                <div style="font-family:var(--mono);font-size:.63rem;color:var(--gray);margin-top:.1rem;" id="lesson-count">0 items added</div>
+              </div>
+            </div>
+            <div class="lesson-list" id="lesson-list">
+              <div style="padding:2rem;text-align:center;color:var(--gray2);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;">ADD LESSONS TO BUILD YOUR COURSE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MY STUDENTS ══ -->
+    <div class="panel" id="panel-students">
+      <div class="section-hdr">
+        <h2>My Students</h2>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <select class="form-select" style="width:auto;padding:.4rem .9rem;font-size:.8rem;" onchange="filterByCourse(this.value)">
+            <option value="">All Courses</option>
+            <option>HTML Fundamentals</option>
+            <option>CSS Mastery</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="students-tbl">
+          <thead><tr><th>Student</th><th>Course</th><th>Progress</th><th>Last Active</th><th>Test Score</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><div class="user-cell"><div class="user-av av-b">AO</div><div><div style="font-weight:500;">Amaka Obi</div><div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2a4b474b414b6a4f474b434604494547">[email&#160;protected]</a></div></div></div></td><td>HTML Fundamentals</td><td><div class="progress-bar"><div class="prog-track"><div class="prog-fill" style="width:100%;background:var(--green);"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--green);">100%</span></div></td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Today</td><td><span class="badge b-pass">87% Pass</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn view" onclick="showToast('Viewing Amaka','info')">View</button><button class="act-btn edit" onclick="showToast('Message sent','success')">Message</button></div></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-a">KB</div><div><div style="font-weight:500;">Kola Balogun</div><div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="375c585b5677525a565e5b1954585a">[email&#160;protected]</a></div></div></div></td><td>CSS Mastery</td><td><div class="progress-bar"><div class="prog-track"><div class="prog-fill" style="width:68%;background:var(--blue-glow);"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--blue-glow);">68%</span></div></td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">2h ago</td><td><span class="badge b-pend">Not taken</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn view">View</button><button class="act-btn edit">Message</button></div></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-g">FN</div><div><div style="font-weight:500;">Fatima Nuhu</div><div style="font-family:var(--mono);font-size:.7rem;color:var(--gray);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0e686f7a67636f4e6b636f6762206d6163">[email&#160;protected]</a></div></div></div></td><td>HTML Fundamentals</td><td><div class="progress-bar"><div class="prog-track"><div class="prog-fill" style="width:45%;background:var(--blue-glow);"></div></div><span style="font-family:var(--mono);font-size:.65rem;color:var(--blue-glow);">45%</span></div></td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">1d ago</td><td><span class="badge b-pend">Not taken</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn view">View</button><button class="act-btn edit">Message</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ SUBMISSIONS ══ -->
+    <div class="panel" id="panel-submissions">
+      <div class="section-hdr"><h2>Assignment Submissions</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Assignment</th><th>Submitted</th><th>Grade</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><div class="user-cell"><div class="user-av av-b">AO</div><div style="font-weight:500;">Amaka Obi</div></div></td><td>HTML</td><td>Assignment 3 — Semantic HTML</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">12 mins ago</td><td><span class="badge b-pend">Ungraded</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn edit" onclick="openModal('grade-modal')">Grade</button></div></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-a">KB</div><div style="font-weight:500;">Kola Balogun</div></div></td><td>CSS</td><td>Assignment 2 — Flexbox Layout</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">2h ago</td><td><span class="badge b-pend">Ungraded</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn edit" onclick="openModal('grade-modal')">Grade</button></div></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-g">FN</div><div style="font-weight:500;">Fatima Nuhu</div></div></td><td>HTML</td><td>Assignment 1 — First Webpage</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Yesterday</td><td><span class="badge b-pass">A — 92/100</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn view">View</button></div></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-r">TM</div><div style="font-weight:500;">Taiwo Martins</div></div></td><td>HTML</td><td>Assignment 2 — HTML Tables</td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">2d ago</td><td><span class="badge b-pend">Ungraded</span></td><td><div style="display:flex;gap:.35rem;"><button class="act-btn edit" onclick="openModal('grade-modal')">Grade</button></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ TEST RESULTS ══ -->
+    <div class="panel" id="panel-results">
+      <div class="section-hdr"><h2>Final Test Results</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student</th><th>Course</th><th>Score</th><th>Result</th><th>Date Taken</th><th>Certificate</th></tr></thead>
+          <tbody>
+            <tr><td><div class="user-cell"><div class="user-av av-b">AO</div><div style="font-weight:500;">Amaka Obi</div></div></td><td>HTML Fundamentals</td><td style="font-family:var(--display);font-weight:700;font-size:1rem;">87%</td><td><span class="badge b-pass">Passed</span></td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Mar 7, 2026</td><td><span class="badge b-pass">Issued ✓</span></td></tr>
+            <tr><td><div class="user-cell"><div class="user-av av-r">TW</div><div style="font-weight:500;">Tunde Williams</div></div></td><td>HTML Fundamentals</td><td style="font-family:var(--display);font-weight:700;font-size:1rem;">54%</td><td><span class="badge b-fail">Failed</span></td><td style="font-family:var(--mono);font-size:.72rem;color:var(--gray);">Feb 28, 2026</td><td style="font-family:var(--mono);font-size:.7rem;color:var(--gray2);">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ EARNINGS ══ -->
+    <div class="panel" id="panel-earnings">
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-val">₦318k</div><div class="stat-label">Total Earned</div><div class="stat-change">All time</div></div>
+        <div class="stat-card blue"><div class="stat-icon">📅</div><div class="stat-val">₦42k</div><div class="stat-label">This Month</div><div class="stat-change">↑ Best month yet</div></div>
+        <div class="stat-card amber"><div class="stat-icon">⏳</div><div class="stat-val">₦18k</div><div class="stat-label">Pending Payout</div><div class="stat-change" style="color:var(--amber)">Processing</div></div>
+      </div>
+      <div class="section-hdr" style="margin-top:.5rem;"><h2>Earnings Breakdown</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Month</th><th>Course</th><th>Enrollments</th><th>Amount</th></tr></thead>
+          <tbody>
+            <tr><td style="font-family:var(--mono);font-size:.78rem;">Mar 2026</td><td>HTML Fundamentals</td><td>18</td><td style="font-family:var(--display);font-weight:700;color:var(--green);">₦90,000</td></tr>
+            <tr><td style="font-family:var(--mono);font-size:.78rem;">Feb 2026</td><td>CSS Mastery</td><td>12</td><td style="font-family:var(--display);font-weight:700;color:var(--green);">₦78,000</td></tr>
+            <tr><td style="font-family:var(--mono);font-size:.78rem;">Jan 2026</td><td>HTML Fundamentals</td><td>16</td><td style="font-family:var(--display);font-weight:700;color:var(--green);">₦80,000</td></tr>
+            <tr><td style="font-family:var(--mono);font-size:.78rem;">Dec 2025</td><td>CSS Mastery</td><td>8</td><td style="font-family:var(--display);font-weight:700;color:var(--green);">₦52,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PROFILE ══ -->
+    <div class="panel" id="panel-profile">
+      <div class="section-hdr"><h2>My Profile</h2></div>
+      <div class="two-col">
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:1rem;">Personal Info</div>
+          <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;">
+            <div id="profile-avatar" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--blue-mid),var(--blue-glow));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:1.5rem;">CO</div>
+            <div>
+              <div id="profile-name" style="font-family:var(--display);font-size:1.2rem;font-weight:700;">Chidi Okafor</div>
+              <div id="profile-spec" style="font-family:var(--mono);font-size:.72rem;color:var(--blue-glow);">Tutor · HTML & CSS</div>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">First Name</label><input class="form-input" type="text" id="p-fname" placeholder="First name"></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" type="text" id="p-lname" placeholder="Last name"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="p-email" placeholder="your@email.com"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="tel" id="p-phone" placeholder="+234 800 000 0000"></div>
+          <div class="form-group"><label class="form-label">Specialisation</label>
+            <select class="form-select" id="p-spec">
+              <option>HTML & CSS</option>
+              <option>JavaScript</option>
+              <option>HTML, CSS & JavaScript</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+        </div>
+        <div>
+          <div class="chart-card" style="margin-bottom:1rem;">
+            <div class="chart-title" style="margin-bottom:.75rem;">Change Password</div>
+            <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" id="p-cur-pw" placeholder="••••••••"></div>
+            <div class="form-group"><label class="form-label">New Password</label><input class="form-input" type="password" id="p-new-pw" placeholder="Min. 8 characters"></div>
+            <div class="form-group"><label class="form-label">Confirm New Password</label><input class="form-input" type="password" id="p-conf-pw" placeholder="••••••••"></div>
+            <button class="btn btn-red" onclick="updatePassword()">Update Password</button>
+          </div>
+
+          <!-- FLUTTERWAVE PAYOUT SETUP -->
+          <div class="chart-card" style="border-color:rgba(43,107,255,.25);">
+            <div class="chart-title" style="margin-bottom:.5rem;">💳 Payout Setup</div>
+            <p style="font-family:var(--mono);font-size:.72rem;color:var(--gray);line-height:1.6;margin-bottom:1rem;">
+              Add your Flutterwave Subaccount ID to receive your share automatically. Without it, frNtcOda will pay you manually via bank transfer.
+            </p>
+            <div style="background:rgba(43,107,255,.07);border:1px solid rgba(43,107,255,.2);border-radius:8px;padding:.85rem 1rem;margin-bottom:1rem;font-size:.8rem;color:var(--gray);line-height:1.65;">
+              <strong style="color:var(--white);">Your earnings split:</strong><br>
+              📚 Course fee → <strong style="color:#22C55E;">You get 93%</strong>, frNtcOda keeps 7%<br>
+              🎓 Certificate fee → <strong style="color:#22C55E;">You get 50%</strong>, frNtcOda keeps 50%<br><br>
+              <strong style="color:var(--white);">How to get your Subaccount ID:</strong><br>
+              1. Go to <a href="https://dashboard.flutterwave.com" target="_blank" style="color:var(--blue-glow);">dashboard.flutterwave.com</a><br>
+              2. Settings → Subaccounts → Create subaccount<br>
+              3. Enter your bank details<br>
+              4. Copy the ID (looks like <code style="color:var(--blue-glow);">RS_XXXXXXXX…</code>)<br>
+              5. Paste it below and save
+            </div>
+            <div class="form-group">
+              <label class="form-label">Flutterwave Subaccount ID</label>
+              <input class="form-input" type="text" id="p-flw-subaccount"
+                placeholder="RS_XXXXXXXXXXXXXXXXXXXXXXXX"
+                style="font-family:var(--mono);font-size:.82rem;">
+            </div>
+            <div id="payout-status" style="font-family:var(--mono);font-size:.7rem;margin-bottom:.75rem;display:none;"></div>
+            <button class="btn btn-primary" onclick="saveSubaccount()">Save Payout Details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- GRADE MODAL -->
+<div class="modal-overlay" id="grade-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('grade-modal')">✕</button>
+    <div class="modal-title">Grade Submission</div>
+    <div class="modal-sub">Assignment 3 — Semantic HTML · Amaka Obi</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:var(--gray);line-height:1.6;">
+      <strong style="color:var(--white);">Student's submission:</strong><br>
+      "I created a webpage using semantic HTML tags including &lt;header&gt;, &lt;main&gt;, &lt;article&gt;, &lt;aside&gt;, and &lt;footer&gt;. Each section is properly labelled and the document outline is clean…"
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Score (out of 100)</label><input class="form-input" type="number" placeholder="85" id="grade-score"></div>
+      <div class="form-group"><label class="form-label">Grade Letter</label>
+        <select class="form-select" id="grade-letter">
+          <option>A</option><option>B</option><option>C</option><option>D</option><option>F</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Feedback to Student</label><textarea class="form-textarea" placeholder="Write your feedback here…" id="grade-feedback"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('grade-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitGrade()">Submit Grade</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// SIDEBAR TOGGLE (mobile)
+function toggleSidebar(){
+  const s=document.getElementById('sidebar');
+  const o=document.getElementById('sidebar-overlay');
+  const b=document.getElementById('hamburger-btn');
+  s.classList.toggle('open');o.classList.toggle('open');b.classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('hamburger-btn').classList.remove('open');
+}
+
+// CURSOR
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function a(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(a);})();
+document.querySelectorAll('a,button,input,select,textarea').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='16px';cur.style.height='16px';ring.style.width='40px';ring.style.height='40px';});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';ring.style.width='30px';ring.style.height='30px';});
+});
+
+const titles={overview:'Dashboard',courses:'My Courses',builder:'Course Builder',students:'My Students',submissions:'Submissions',results:'Test Results',earnings:'Earnings',profile:'My Profile'};
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('topbar-title').textContent=titles[id]||id;
+  document.getElementById('topbar-crumb').textContent='Tutor / '+(titles[id]||id);
+  closeSidebar();
+}
+
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>t.classList.remove('show'),3000);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+// LESSON BUILDER
+let lessonCount=0;
+function switchType(type,btn){
+  document.querySelectorAll('.type-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.type-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('type-'+type).classList.add('active');
+}
+function addLessonItem(icon,type){
+  const titleEl=type==='Lesson'?'l-title':type==='Assignment'?'a-title':'t-qcount';
+  const titleVal=document.getElementById(titleEl).value.trim()||type+' '+(lessonCount+1);
+  lessonCount++;
+  const list=document.getElementById('lesson-list');
+  if(list.querySelector('div[style]'))list.innerHTML='';
+  const item=document.createElement('div');
+  item.className='lesson-item';
+  item.innerHTML=`<div class="lesson-num">${lessonCount}</div><div class="lesson-icon">${icon}</div><div class="lesson-info"><div class="lesson-name">${titleVal}</div><div class="lesson-type">${type}</div></div><div class="lesson-actions"><button class="act-btn edit" onclick="showToast('Edit lesson','info')">Edit</button><button class="act-btn del" onclick="this.closest('.lesson-item').remove();lessonCount--;updateCount()">Del</button></div>`;
+  list.appendChild(item);
+  document.getElementById('lesson-count').textContent=lessonCount+' item'+(lessonCount!==1?'s':'')+' added';
+  showToast(type+' added ✓','success');
+}
+function updateCount(){document.getElementById('lesson-count').textContent=document.querySelectorAll('.lesson-item').length+' items added';}
+function openNewCourse(){document.getElementById('bc-title').value='';document.getElementById('bc-fee').value='';document.getElementById('bc-desc').value='';document.getElementById('lesson-list').innerHTML='<div style="padding:2rem;text-align:center;color:var(--gray2);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;">ADD LESSONS TO BUILD YOUR COURSE</div>';lessonCount=0;document.getElementById('lesson-count').textContent='0 items added';}
+function submitForReview(){const t=document.getElementById('bc-title').value.trim();if(!t){showToast('Please add a course title','error');return;}showToast('Course submitted for admin review ✓','success');}
+function removeCourseCard(btn){if(!confirm('Delete this course?'))return;btn.closest('.course-card').remove();showToast('Course deleted','warning');}
+function submitGrade(){const s=document.getElementById('grade-score').value;if(!s){showToast('Enter a score','error');return;}closeModal('grade-modal');showToast('Grade submitted ✓','success');}
+function filterByCourse(val){}
+</script>
+
+<!-- ═══════════════════════════════════════════
+     FIREBASE — Tutor Dashboard
+═══════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, addDoc, updateDoc, deleteDoc,
+  collection, getDocs, query, where, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+// ── PASTE YOUR FIREBASE CONFIG HERE ──────────
+  const firebaseConfig = {
+  apiKey:            "AIzaSyATtx9-URlB2-ZKc_4eXIlr8lQxg_dlJAQ",
+  authDomain:        "frnt-coda.firebaseapp.com",
+  projectId:         "frnt-coda",
+  storageBucket:     "frnt-coda.firebasestorage.app",
+  messagingSenderId: "564512970305",
+  appId:             "1:564512970305:web:d7fd66bdcf6b8268d4d8c0",
+};
+// ─────────────────────────────────────────────
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+let currentTutor = null;
+let myCoursesData = [];
+
+// ── AUTH GUARD ────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "auth.html"; return; }
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) { await signOut(auth); window.location.href = "auth.html"; return; }
+  const profile = snap.data();
+  if (profile.role !== "tutor") { await signOut(auth); window.location.href = "auth.html"; return; }
+  if (profile.status === "suspended") { alert("Account suspended."); await signOut(auth); window.location.href = "auth.html"; return; }
+  currentTutor = { user, profile };
+  loadDashboard(user, profile);
+});
+
+async function loadDashboard(user, profile) {
+  // Update sidebar
+  document.querySelector(".tutor-name").textContent = profile.firstName + " " + profile.lastName;
+  document.querySelector(".tutor-avatar").textContent = (profile.firstName[0] + profile.lastName[0]).toUpperCase();
+  document.querySelector(".tutor-role").textContent = "Tutor · " + (profile.specialisation || "");
+
+  // Load profile panel fields
+  document.getElementById("p-fname").value       = profile.firstName   || "";
+  document.getElementById("p-lname").value       = profile.lastName    || "";
+  document.getElementById("p-email").value       = profile.email       || "";
+  document.getElementById("p-phone").value       = profile.phone       || "";
+  document.getElementById("p-spec").value        = profile.specialisation || "HTML & CSS";
+  document.getElementById("profile-name").textContent = profile.fullName || profile.firstName + " " + profile.lastName;
+  document.getElementById("profile-spec").textContent = "Tutor · " + (profile.specialisation || "");
+  document.getElementById("profile-avatar").textContent = (profile.firstName[0] + profile.lastName[0]).toUpperCase();
+
+  // Load subaccount if already saved
+  if (profile.flwSubaccount) {
+    document.getElementById("p-flw-subaccount").value = profile.flwSubaccount;
+    const status = document.getElementById("payout-status");
+    status.style.display = "block";
+    status.innerHTML = `<span style="color:#22C55E;">✓ Payout connected</span>`;
+  }
+
+  // Load data
+  await loadMyCourses(user.uid);
+  await loadSubmissions(user.uid);
+  await loadEarnings(user.uid);
+}
+
+// ── SAVE PROFILE ──────────────────────────────
+window.saveProfile = async function() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const firstName = document.getElementById("p-fname").value.trim();
+  const lastName  = document.getElementById("p-lname").value.trim();
+  const phone     = document.getElementById("p-phone").value.trim();
+  const spec      = document.getElementById("p-spec").value;
+  if (!firstName || !lastName) return showToast("Name cannot be empty", "error");
+  try {
+    await updateDoc(doc(db, "users", user.uid), {
+      firstName, lastName,
+      fullName: firstName + " " + lastName,
+      phone, specialisation: spec,
+      updatedAt: serverTimestamp(),
+    });
+    // Update sidebar + profile header
+    document.querySelector(".tutor-name").textContent = firstName + " " + lastName;
+    document.querySelector(".tutor-avatar").textContent = (firstName[0] + lastName[0]).toUpperCase();
+    document.querySelector(".tutor-role").textContent = "Tutor · " + spec;
+    document.getElementById("profile-name").textContent = firstName + " " + lastName;
+    document.getElementById("profile-spec").textContent = "Tutor · " + spec;
+    document.getElementById("profile-avatar").textContent = (firstName[0] + lastName[0]).toUpperCase();
+    showToast("Profile updated ✓", "success");
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+// ── UPDATE PASSWORD ───────────────────────────
+window.updatePassword = async function() {
+  const curPw  = document.getElementById("p-cur-pw").value;
+  const newPw  = document.getElementById("p-new-pw").value;
+  const confPw = document.getElementById("p-conf-pw").value;
+  if (!curPw || !newPw) return showToast("Fill in all password fields", "error");
+  if (newPw !== confPw) return showToast("New passwords don't match", "error");
+  if (newPw.length < 8) return showToast("Password must be at least 8 characters", "error");
+  try {
+    // Re-authenticate then update
+    const { EmailAuthProvider, reauthenticateWithCredential, updatePassword: fbUpdatePw }
+      = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    const user       = auth.currentUser;
+    const credential = EmailAuthProvider.credential(user.email, curPw);
+    await reauthenticateWithCredential(user, credential);
+    await fbUpdatePw(user, newPw);
+    document.getElementById("p-cur-pw").value  = "";
+    document.getElementById("p-new-pw").value  = "";
+    document.getElementById("p-conf-pw").value = "";
+    showToast("Password updated ✓", "success");
+  } catch (e) {
+    const msg = e.code === "auth/wrong-password" ? "Current password is incorrect" : e.message;
+    showToast(msg, "error");
+  }
+};
+
+// ── SAVE FLUTTERWAVE SUBACCOUNT ───────────────
+window.saveSubaccount = async function() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const subaccount = document.getElementById("p-flw-subaccount").value.trim();
+  if (!subaccount) return showToast("Enter your Subaccount ID", "error");
+  if (!subaccount.startsWith("RS_")) return showToast("Subaccount ID should start with RS_", "error");
+  try {
+    await updateDoc(doc(db, "users", user.uid), {
+      flwSubaccount: subaccount,
+      updatedAt:     serverTimestamp(),
+    });
+    const status = document.getElementById("payout-status");
+    status.style.display = "block";
+    status.innerHTML = `<span style="color:#22C55E;">✓ Payout connected — 93% of course fees and 50% of cert fees sent automatically</span>`;
+    showToast("Payout details saved ✓", "success");
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+async function loadMyCourses(uid) {
+  const q    = query(collection(db, "courses"), where("tutorId", "==", uid));
+  const snap = await getDocs(q);
+  myCoursesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const live    = myCoursesData.filter(c => c.status === "live").length;
+  const pending = myCoursesData.filter(c => c.status === "pending").length;
+  const statVals = document.querySelectorAll(".stat-val");
+  if (statVals[0]) statVals[0].textContent = live;
+
+  // Count students across all courses
+  let totalStudents = 0;
+  for (const c of myCoursesData) totalStudents += (c.studentsCount || 0);
+  if (statVals[1]) statVals[1].textContent = totalStudents;
+}
+
+async function loadSubmissions(uid) {
+  if (!myCoursesData.length) return;
+  let ungraded = 0;
+  for (const c of myCoursesData) {
+    const q    = query(collection(db, "submissions"), where("courseId", "==", c.id), where("grade", "==", null));
+    const snap = await getDocs(q);
+    ungraded += snap.size;
+  }
+  const statVals = document.querySelectorAll(".stat-val");
+  if (statVals[2]) statVals[2].textContent = ungraded;
+  const badge = document.querySelector(".nav-badge");
+  if (badge) badge.textContent = ungraded;
+}
+
+async function loadEarnings(uid) {
+  let total = 0;
+  for (const c of myCoursesData) {
+    const q    = query(collection(db, "payments"), where("courseId", "==", c.id), where("type", "==", "course"));
+    const snap = await getDocs(q);
+    snap.docs.forEach(d => total += (d.data().amount || 0));
+  }
+  const statVals = document.querySelectorAll(".stat-val");
+  if (statVals[3]) statVals[3].textContent = "₦" + (total >= 1000 ? (total/1000).toFixed(0)+"k" : total || 0);
+}
+
+// ── SAVE COURSE ───────────────────────────────
+window.submitForReviewFirebase = async function() {
+  const user = auth.currentUser;
+  if (!user || !currentTutor) return;
+  const title = document.getElementById("bc-title").value.trim();
+  const lang  = document.getElementById("bc-lang").value;
+  const fee   = document.getElementById("bc-fee").value;
+  const desc  = document.getElementById("bc-desc").value.trim();
+  if (!title) { showToast("Add a course title", "error"); return; }
+  if (!fee)   { showToast("Set a course fee", "error"); return; }
+  const lessonItems = document.querySelectorAll("#lesson-list .lesson-item");
+  const lessons = [...lessonItems].map((item, i) => ({
+    order: i + 1,
+    name:  item.querySelector(".lesson-name")?.textContent || "",
+    type:  item.querySelector(".lesson-type")?.textContent || "Lesson",
+  }));
+  try {
+    const p = currentTutor.profile;
+    await addDoc(collection(db, "courses"), {
+      title, language: lang, price: Number(fee), description: desc,
+      tutorId: user.uid,
+      tutorName: p.fullName || p.firstName + " " + p.lastName,
+      tutorInitials: (p.firstName[0] + p.lastName[0]).toUpperCase(),
+      status: "pending", studentsCount: 0, rating: 0, ratingCount: 0,
+      lessons, createdAt: serverTimestamp(),
+    });
+    showToast("Submitted for admin review ✓", "success");
+    await loadMyCourses(user.uid);
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+// ── GRADE SUBMISSION ──────────────────────────
+let gradingSubId = null;
+window.openGradeModal = function(subId) { gradingSubId = subId; openModal("grade-modal"); };
+window.submitGradeFirebase = async function() {
+  if (!gradingSubId) return;
+  const score    = document.getElementById("grade-score").value;
+  const feedback = document.getElementById("grade-feedback").value;
+  if (!score) { showToast("Enter a score", "error"); return; }
+  try {
+    await updateDoc(doc(db, "submissions", gradingSubId), {
+      grade: Number(score), feedback: feedback || "", gradedAt: serverTimestamp(),
+    });
+    closeModal("grade-modal");
+    showToast("Grade submitted ✓", "success");
+    gradingSubId = null;
+  } catch (e) { showToast("Error: " + e.message, "error"); }
+};
+
+// Wire the Submit for Review button to Firebase
+document.querySelector('[onclick="submitForReview()"]')
+  ?.setAttribute("onclick", "submitForReviewFirebase()");
+document.querySelector('[onclick="submitGrade()"]')
+  ?.setAttribute("onclick", "submitGradeFirebase()");
+
+// ── LOGOUT ────────────────────────────────────
+document.querySelector(".logout-btn").onclick = async () => {
+  await signOut(auth); window.location.href = "auth.html";
+};
+</script>
+</body>
+</html>

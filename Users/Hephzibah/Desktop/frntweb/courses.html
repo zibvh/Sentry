@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>frNtcOda — All Courses</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#0A1F6E;--blue-mid:#1338BE;--blue-glow:#2B6BFF;
+  --red:#D90429;--red-bright:#FF0A35;
+  --white:#FFFFFF;--dark:#060D2B;--dark2:#0D1845;
+  --surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.08);
+  --gray:#8A94B8;--gray2:#4A5378;--green:#22C55E;--amber:#F59E0B;
+  --mono:'DM Mono',monospace;--display:'Syne',sans-serif;--body:'Outfit',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--body);background:var(--dark);color:var(--white);min-height:100vh;cursor:none;overflow-x:hidden;}
+
+/* CURSOR */
+.cursor{width:10px;height:10px;background:var(--red-bright);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .2s,height .2s;}
+.cursor-ring{width:30px;height:30px;border:1.5px solid rgba(255,10,53,0.4);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .25s,height .25s;}
+
+/* BG */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(43,107,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(43,107,255,0.04) 1px,transparent 1px);background-size:55px 55px;mask-image:radial-gradient(ellipse 80% 80% at 50% 20%,black 20%,transparent 100%);pointer-events:none;z-index:0;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 5%;height:68px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,13,43,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{font-family:var(--display);font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;color:var(--white);text-decoration:none;}
+.logo span{color:var(--red-bright);}
+.nav-links{display:flex;align-items:center;gap:2rem;list-style:none;}
+.nav-links a{font-family:var(--mono);font-size:0.78rem;color:var(--gray);text-decoration:none;letter-spacing:.05em;transition:color .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--white);}
+.nav-btns{display:flex;gap:.75rem;}
+.btn-ghost{font-family:var(--mono);font-size:.78rem;color:var(--white);background:transparent;border:1px solid rgba(255,255,255,.2);padding:.5rem 1.2rem;border-radius:4px;cursor:none;text-decoration:none;transition:border-color .2s;}
+.btn-ghost:hover{border-color:var(--blue-glow);color:var(--blue-glow);}
+.btn-primary{font-family:var(--mono);font-size:.78rem;color:var(--white);background:var(--red);border:none;padding:.5rem 1.4rem;border-radius:4px;cursor:none;text-decoration:none;transition:background .2s;}
+.btn-primary:hover{background:var(--red-bright);}
+
+/* HERO */
+.page-hero{padding:120px 5% 60px;position:relative;z-index:1;}
+.page-hero-tag{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--red-bright);margin-bottom:.75rem;}
+.page-hero-title{font-family:var(--display);font-size:clamp(2.5rem,5vw,4.5rem);font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:1rem;}
+.page-hero-title .blue{color:var(--blue-glow);}
+.page-hero-sub{font-size:1rem;color:var(--gray);max-width:520px;line-height:1.7;margin-bottom:2rem;}
+.hero-stats{display:flex;gap:2.5rem;flex-wrap:wrap;}
+.hero-stat{text-align:left;}
+.hero-stat-val{font-family:var(--display);font-size:1.8rem;font-weight:800;line-height:1;}
+.hero-stat-val span{color:var(--red-bright);}
+.hero-stat-label{font-family:var(--mono);font-size:.65rem;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem;}
+
+/* FILTER BAR */
+.filter-bar{padding:0 5% 2rem;position:relative;z-index:1;}
+.filter-inner{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.search-wrap{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.5rem 1rem;flex:1;min-width:200px;transition:border-color .2s;}
+.search-wrap:focus-within{border-color:rgba(43,107,255,.4);}
+.search-wrap span{color:var(--gray2);font-size:.9rem;}
+.search-wrap input{background:none;border:none;outline:none;font-family:var(--body);font-size:.875rem;color:var(--white);width:100%;cursor:none;}
+.search-wrap input::placeholder{color:var(--gray2);}
+.filter-sep{width:1px;height:28px;background:var(--border);}
+.filter-chips{display:flex;gap:.4rem;flex-wrap:wrap;}
+.chip{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;padding:.35rem .9rem;border-radius:5px;border:1px solid var(--border);color:var(--gray);background:transparent;cursor:none;transition:all .2s;}
+.chip:hover{color:var(--white);}
+.chip.active{background:rgba(43,107,255,.15);border-color:rgba(43,107,255,.35);color:var(--blue-glow);}
+.chip.active.red{background:rgba(255,10,53,.12);border-color:rgba(255,10,53,.3);color:var(--red-bright);}
+.sort-select{font-family:var(--mono);font-size:.72rem;color:var(--gray);background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:.4rem .8rem;cursor:none;outline:none;transition:border-color .2s;}
+.sort-select:focus{border-color:rgba(43,107,255,.4);color:var(--white);}
+.sort-select option{background:var(--dark2);}
+
+/* COURSES GRID */
+.courses-section{padding:0 5% 80px;position:relative;z-index:1;}
+.courses-count{font-family:var(--mono);font-size:.72rem;color:var(--gray);margin-bottom:1.5rem;letter-spacing:.05em;}
+.courses-count span{color:var(--white);}
+.courses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;}
+
+/* COURSE CARD */
+.course-card{background:var(--dark2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform .3s,border-color .3s,box-shadow .3s;cursor:none;animation:fadeUp .5s ease both;}
+.course-card:hover{transform:translateY(-5px);border-color:rgba(43,107,255,.3);box-shadow:0 20px 60px rgba(0,0,0,.35);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.card-banner{height:120px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.card-banner.html-bg{background:linear-gradient(135deg,rgba(255,107,107,.15) 0%,rgba(10,31,110,.8) 100%);}
+.card-banner.css-bg{background:linear-gradient(135deg,rgba(43,107,255,.2) 0%,rgba(10,31,110,.8) 100%);}
+.card-banner.js-bg{background:linear-gradient(135deg,rgba(255,214,0,.15) 0%,rgba(10,31,110,.8) 100%);}
+.card-banner-icon{font-size:3.5rem;opacity:.6;}
+.card-banner-tag{position:absolute;top:.85rem;left:.85rem;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .65rem;border-radius:4px;}
+.tag-html{background:rgba(255,107,107,.18);color:#FF6B6B;border:1px solid rgba(255,107,107,.25);}
+.tag-css{background:rgba(43,107,255,.18);color:var(--blue-glow);border:1px solid rgba(43,107,255,.25);}
+.tag-js{background:rgba(255,214,0,.15);color:#FFD600;border:1px solid rgba(255,214,0,.25);}
+.card-banner-rating{position:absolute;top:.85rem;right:.85rem;font-family:var(--mono);font-size:.68rem;color:#FFD600;background:rgba(0,0,0,.4);padding:.2rem .55rem;border-radius:4px;backdrop-filter:blur(8px);}
+.card-body{padding:1.25rem 1.5rem;}
+.card-tutor-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;}
+.card-tutor-av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--blue-mid),var(--blue-glow));display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:.55rem;flex-shrink:0;}
+.card-tutor-name{font-family:var(--mono);font-size:.68rem;color:var(--gray);letter-spacing:.04em;}
+.card-title{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.5rem;line-height:1.2;}
+.card-desc{font-size:.835rem;color:var(--gray);line-height:1.6;margin-bottom:1rem;}
+.card-meta{display:flex;gap:1rem;flex-wrap:wrap;padding:.75rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:1rem;}
+.card-meta-item{font-family:var(--mono);font-size:.65rem;color:var(--gray);}
+.card-meta-item strong{color:var(--white);}
+.card-footer{display:flex;align-items:center;justify-content:space-between;}
+.card-price{font-family:var(--display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em;}
+.card-price .naira{color:var(--red-bright);font-size:.8rem;}
+.enroll-btn{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;background:var(--red);color:var(--white);border:none;padding:.5rem 1.1rem;border-radius:6px;cursor:none;transition:background .2s,transform .15s;text-transform:uppercase;}
+.enroll-btn:hover{background:var(--red-bright);transform:translateY(-1px);}
+.preview-btn{font-family:var(--mono);font-size:.68rem;color:var(--gray);background:transparent;border:1px solid var(--border);padding:.45rem 1rem;border-radius:6px;cursor:none;transition:all .2s;text-transform:uppercase;letter-spacing:.06em;}
+.preview-btn:hover{color:var(--white);border-color:rgba(255,255,255,.2);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--gray);}
+.empty-state .big{font-size:3rem;margin-bottom:1rem;}
+.empty-state h3{font-family:var(--display);font-size:1.1rem;font-weight:700;margin-bottom:.5rem;color:var(--white);}
+
+/* LOGIN GATE MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.login-modal{background:var(--dark2);border:1px solid rgba(43,107,255,.25);border-radius:18px;padding:2.5rem;width:100%;max-width:420px;position:relative;box-shadow:0 50px 120px rgba(0,0,0,.6);animation:slideUp .3s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.login-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--blue-mid),var(--blue-glow));border-radius:18px 18px 0 0;}
+.modal-close{position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;cursor:none;color:var(--gray);font-size:1.1rem;transition:color .2s;}
+.modal-close:hover{color:var(--white);}
+.modal-course-preview{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.85rem;}
+.modal-course-icon{font-size:1.75rem;}
+.modal-course-info{}
+.modal-course-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.modal-course-sub{font-family:var(--mono);font-size:.65rem;color:var(--gray);margin-top:.15rem;}
+.modal-lock{text-align:center;margin-bottom:1.5rem;}
+.modal-lock-icon{font-size:2.5rem;margin-bottom:.75rem;}
+.modal-lock-title{font-family:var(--display);font-size:1.25rem;font-weight:800;margin-bottom:.4rem;}
+.modal-lock-sub{font-size:.875rem;color:var(--gray);line-height:1.6;}
+.modal-btns{display:flex;flex-direction:column;gap:.75rem;margin-top:1.5rem;}
+.modal-btn-main{font-family:var(--display);font-size:.95rem;font-weight:700;color:var(--white);background:var(--red);border:none;padding:.85rem;border-radius:8px;cursor:none;width:100%;transition:background .2s,transform .15s;box-shadow:0 8px 30px rgba(217,4,41,.3);}
+.modal-btn-main:hover{background:var(--red-bright);transform:translateY(-1px);}
+.modal-btn-sec{font-family:var(--display);font-size:.9rem;font-weight:600;color:var(--white);background:transparent;border:1px solid rgba(255,255,255,.15);padding:.8rem;border-radius:8px;cursor:none;width:100%;transition:border-color .2s;}
+.modal-btn-sec:hover{border-color:var(--blue-glow);color:var(--blue-glow);}
+.modal-divider{display:flex;align-items:center;gap:.75rem;font-family:var(--mono);font-size:.62rem;color:var(--gray2);text-transform:uppercase;letter-spacing:.1em;}
+.modal-divider::before,.modal-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
+
+/* COURSE DETAIL MODAL */
+.detail-modal{background:var(--dark2);border:1px solid rgba(43,107,255,.2);border-radius:18px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 50px 120px rgba(0,0,0,.6);animation:slideUp .3s ease;}
+.detail-banner{height:160px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.detail-body{padding:2rem;}
+.detail-title{font-family:var(--display);font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.35rem;}
+.detail-tutor{font-family:var(--mono);font-size:.72rem;color:var(--gray);margin-bottom:1.25rem;}
+.detail-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.5rem;}
+.detail-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:.85rem;text-align:center;}
+.detail-stat-val{font-family:var(--display);font-size:1.1rem;font-weight:700;}
+.detail-stat-label{font-family:var(--mono);font-size:.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem;}
+.detail-desc{font-size:.9rem;color:var(--gray);line-height:1.75;margin-bottom:1.5rem;}
+.detail-outline{margin-bottom:1.5rem;}
+.detail-outline-title{font-family:var(--display);font-size:.95rem;font-weight:700;margin-bottom:.85rem;}
+.outline-item{display:flex;align-items:center;gap:.75rem;padding:.6rem .85rem;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:7px;margin-bottom:.4rem;font-size:.85rem;}
+.outline-item .num{font-family:var(--mono);font-size:.62rem;color:var(--gray2);width:18px;flex-shrink:0;text-align:center;}
+.outline-item .icon{font-size:.9rem;width:20px;text-align:center;flex-shrink:0;}
+.outline-item .name{flex:1;}
+.outline-item .locked{font-family:var(--mono);font-size:.6rem;color:var(--gray2);}
+.detail-footer{display:flex;align-items:center;justify-content:space-between;padding-top:1.5rem;border-top:1px solid var(--border);flex-wrap:wrap;gap:1rem;}
+.detail-price{font-family:var(--display);font-size:1.5rem;font-weight:800;}
+.detail-price .naira{color:var(--red-bright);font-size:1rem;}
+.cert-fee-note{font-family:var(--mono);font-size:.65rem;color:var(--gray);margin-top:.2rem;}
+
+/* REVIEWS */
+.reviews-section{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.review-item{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;margin-bottom:.65rem;}
+.review-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;}
+.review-author{font-size:.82rem;font-weight:600;}
+.review-stars{color:#FFD600;font-size:.75rem;}
+.review-text{font-size:.82rem;color:var(--gray);line-height:1.55;}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--dark2);border:1px solid rgba(43,107,255,.3);border-radius:8px;padding:.75rem 1.25rem;font-family:var(--mono);font-size:.78rem;color:var(--white);z-index:999;transform:translateX(120%);transition:transform .3s;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.toast.show{transform:translateX(0);}
+.toast.success{border-color:rgba(34,197,94,.4);}
+
+/* NO RESULTS */
+#no-results{display:none;grid-column:1/-1;}
+
+@media(max-width:768px){.nav-links{display:none;}.courses-grid{grid-template-columns:1fr;}}
+
+/* ── HAMBURGER ── */
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:.45rem .55rem;cursor:none;}
+.hamburger span{display:block;width:20px;height:2px;background:var(--white);border-radius:2px;transition:all .3s;}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+.mobile-nav{display:none;position:fixed;top:68px;left:0;right:0;background:var(--dark2);border-bottom:1px solid var(--border);padding:1.25rem 5%;z-index:99;animation:slideDown .25s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.mobile-nav.open{display:block;}
+.mobile-nav a{display:block;font-family:var(--mono);font-size:.85rem;color:var(--gray);text-decoration:none;padding:.75rem 0;border-bottom:1px solid var(--border);letter-spacing:.05em;}
+.mobile-nav a:last-of-type{border-bottom:none;}
+.mobile-nav a:hover{color:var(--white);}
+.mobile-nav-btns{display:flex;gap:.75rem;margin-top:1rem;}
+.mobile-nav-btns a{flex:1;text-align:center;padding:.65rem;border-radius:6px;font-family:var(--mono);font-size:.78rem;text-decoration:none;}
+.mb-ghost{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);color:var(--white);}
+.mb-primary{background:var(--red);color:var(--white);}
+
+@media(max-width:768px){
+  .hamburger{display:flex;}
+  .nav-btns{display:none;}
+  nav{padding:0 4%;}
+  .page-hero{padding:100px 4% 50px;}
+  .page-hero-title{font-size:clamp(2rem,8vw,3rem);}
+  .hero-stats{gap:1.25rem;flex-wrap:wrap;}
+  .hero-stat-val{font-size:1.4rem;}
+  .filter-inner{flex-direction:column;align-items:stretch;}
+  .filter-sep{display:none;}
+  .filter-chips{flex-wrap:wrap;}
+  .search-wrap{min-width:unset;}
+  .sort-select{width:100%;}
+  .courses-section{padding:0 4% 60px;}
+  .detail-stats{grid-template-columns:repeat(2,1fr);}
+  .detail-body{padding:1.25rem;}
+  .detail-footer{flex-direction:column;gap:.75rem;}
+}
+@media(max-width:480px){
+  .courses-grid{grid-template-columns:1fr;}
+  .card-meta{grid-template-columns:1fr 1fr;}
+  .page-hero-title{font-size:clamp(1.8rem,7vw,2.5rem);}
+}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="logo">frNt<span>c</span>Oda</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="courses.html" class="active">Courses</a></li>
+    <li><a href="index.html#certificate">Certificates</a></li>
+    <li><a href="index.html#how">How It Works</a></li>
+  </ul>
+  <div class="nav-btns">
+    <a href="auth.html" class="btn-ghost">Log In</a>
+    <a href="auth.html" class="btn-primary">Sign Up</a>
+  </div>
+  <button class="hamburger" id="hamburger" onclick="toggleMobileNav()"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-nav" id="mobile-nav">
+  <a href="index.html">Home</a>
+  <a href="courses.html">All Courses</a>
+  <a href="index.html#certificate">Certificates</a>
+  <a href="index.html#how">How It Works</a>
+  <div class="mobile-nav-btns">
+    <a href="auth.html" class="mb-ghost">Log In</a>
+    <a href="auth.html" class="mb-primary">Sign Up</a>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="page-hero">
+  <div class="page-hero-tag">// Browse All Courses</div>
+  <h1 class="page-hero-title">Learn. Build. <span class="blue">Get Certified.</span></h1>
+  <p class="page-hero-sub">Pick a course taught by expert Nigerian tutors. Complete lessons, submit assignments, pass the test — earn a verified certificate.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="hero-stat-val" id="total-courses-stat">3<span>+</span></div><div class="hero-stat-label">Courses</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">142<span>+</span></div><div class="hero-stat-label">Students</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">₦2.5<span>k</span></div><div class="hero-stat-label">Cert from</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">4.8<span>★</span></div><div class="hero-stat-label">Avg Rating</div></div>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="filter-inner">
+    <div class="search-wrap">
+      <span>🔍</span>
+      <input type="text" placeholder="Search courses…" id="search-input" oninput="filterCourses()">
+    </div>
+    <div class="filter-sep"></div>
+    <div class="filter-chips">
+      <button class="chip active" onclick="setFilter('all',this)">All</button>
+      <button class="chip" onclick="setFilter('HTML',this)">HTML</button>
+      <button class="chip" onclick="setFilter('CSS',this)">CSS</button>
+      <button class="chip" onclick="setFilter('JavaScript',this)">JavaScript</button>
+    </div>
+    <div class="filter-sep"></div>
+    <select class="sort-select" onchange="sortCourses(this.value)">
+      <option value="popular">Most Popular</option>
+      <option value="newest">Newest</option>
+      <option value="price-low">Price: Low → High</option>
+      <option value="price-high">Price: High → Low</option>
+      <option value="rating">Highest Rated</option>
+    </select>
+  </div>
+</div>
+
+<!-- COURSES -->
+<section class="courses-section">
+  <div class="courses-count" id="courses-count">Showing <span id="count-num">3</span> courses</div>
+  <div class="courses-grid" id="courses-grid">
+    <!-- Cards injected by JS -->
+    <div class="empty-state" id="no-results" style="display:none;grid-column:1/-1;">
+      <div class="big">🔍</div>
+      <h3>No courses found</h3>
+      <p>Try adjusting your search or filter</p>
+    </div>
+  </div>
+</section>
+
+<!-- LOGIN GATE MODAL -->
+<div class="modal-overlay" id="login-modal">
+  <div class="login-modal">
+    <button class="modal-close" onclick="closeModal('login-modal')">✕</button>
+    <div class="modal-course-preview" id="modal-course-preview">
+      <div class="modal-course-icon" id="modal-icon">🌐</div>
+      <div class="modal-course-info">
+        <div class="modal-course-title" id="modal-course-title">HTML Fundamentals</div>
+        <div class="modal-course-sub" id="modal-course-sub">by Chidi Okafor · ₦5,000</div>
+      </div>
+    </div>
+    <div class="modal-lock">
+      <div class="modal-lock-icon">🔐</div>
+      <div class="modal-lock-title">Login to Enroll</div>
+      <div class="modal-lock-sub">Create a free account or log in to enroll in this course and start learning today.</div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn-main" onclick="window.location.href='auth.html'">Sign Up Free — Get Started</button>
+      <div class="modal-divider">or</div>
+      <button class="modal-btn-sec" onclick="window.location.href='auth.html'">Log In to Existing Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- COURSE DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="detail-modal" id="detail-modal-inner">
+    <button class="modal-close" onclick="closeModal('detail-modal')" style="z-index:10;">✕</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CURSOR ──
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function a(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(a);})();
+function hookCursor(){document.querySelectorAll('a,button,input,select').forEach(el=>{el.addEventListener('mouseenter',()=>{cur.style.width='16px';cur.style.height='16px';ring.style.width='42px';ring.style.height='42px';});el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';ring.style.width='30px';ring.style.height='30px';});});}
+
+// ── COURSE DATA ──
+// This array is the shared "course store" — tutors push to this via the builder
+const COURSES = [
+  {
+    id:1, title:'HTML Fundamentals', lang:'HTML', icon:'🌐',
+    tutor:'Chidi Okafor', tutorInitials:'CO', tutorColor:'av-blue',
+    price:5000, certFee:2500, rating:4.8, students:60,
+    lessons:12, assignments:4, duration:'4 weeks',
+    desc:'Build the skeleton of any webpage. Learn HTML tags, document structure, links, images, tables, forms, semantic HTML, and accessibility best practices from scratch.',
+    outline:[
+      {icon:'📖',name:'Introduction to HTML',type:'Lesson'},
+      {icon:'📖',name:'HTML Tags & Elements',type:'Lesson'},
+      {icon:'📖',name:'Document Structure',type:'Lesson'},
+      {icon:'📝',name:'Assignment 1 — First Webpage',type:'Assignment'},
+      {icon:'📖',name:'Links & Images',type:'Lesson'},
+      {icon:'📖',name:'HTML Tables',type:'Lesson'},
+      {icon:'📝',name:'Assignment 2 — Tables',type:'Assignment'},
+      {icon:'📖',name:'HTML Forms',type:'Lesson'},
+      {icon:'📖',name:'Semantic HTML',type:'Lesson'},
+      {icon:'📝',name:'Assignment 3 — Semantic',type:'Assignment'},
+      {icon:'📖',name:'HTML Accessibility',type:'Lesson'},
+      {icon:'✅',name:'Final Test',type:'Test'},
+    ],
+    reviews:[
+      {author:'Amaka Obi',stars:5,text:'Best HTML course I\'ve ever taken. Super clear and practical.'},
+      {author:'Kola Balogun',stars:5,text:'Chidi explains everything so well. Loved the assignments!'},
+    ],
+    featured:true, newest:false,
+  },
+  {
+    id:2, title:'CSS Mastery', lang:'CSS', icon:'🎨',
+    tutor:'Chidi Okafor', tutorInitials:'CO', tutorColor:'av-blue',
+    price:6500, certFee:2500, rating:4.6, students:43,
+    lessons:15, assignments:5, duration:'5 weeks',
+    desc:'Style, animate and layout modern websites using CSS. Master Flexbox, CSS Grid, responsive design, media queries, transitions, and keyframe animations.',
+    outline:[
+      {icon:'📖',name:'CSS Selectors & Properties',type:'Lesson'},
+      {icon:'📖',name:'Box Model',type:'Lesson'},
+      {icon:'📖',name:'Flexbox Layout',type:'Lesson'},
+      {icon:'📝',name:'Assignment 1 — Flexbox',type:'Assignment'},
+      {icon:'📖',name:'CSS Grid',type:'Lesson'},
+      {icon:'📖',name:'Responsive Design',type:'Lesson'},
+      {icon:'📝',name:'Assignment 2 — Grid Layout',type:'Assignment'},
+      {icon:'📖',name:'CSS Animations',type:'Lesson'},
+      {icon:'📖',name:'CSS Variables & Themes',type:'Lesson'},
+      {icon:'📝',name:'Assignment 3 — Full Page',type:'Assignment'},
+      {icon:'✅',name:'Final Test',type:'Test'},
+    ],
+    reviews:[
+      {author:'Taiwo Martins',stars:4,text:'The Flexbox section alone was worth the price. Great course!'},
+      {author:'Ngozi Eze',stars:5,text:'Now I can build any layout without struggle. 10/10!'},
+    ],
+    featured:true, newest:false,
+  },
+  {
+    id:3, title:'JavaScript Essentials', lang:'JavaScript', icon:'⚡',
+    tutor:'Seun Adesanya', tutorInitials:'SA', tutorColor:'av-green',
+    price:8000, certFee:3500, rating:4.9, students:39,
+    lessons:20, assignments:6, duration:'6 weeks',
+    desc:'Learn JavaScript from scratch. Understand variables, data types, functions, arrays, objects, DOM manipulation, events, fetch API, and modern ES6+ syntax.',
+    outline:[
+      {icon:'📖',name:'Variables & Data Types',type:'Lesson'},
+      {icon:'📖',name:'Functions',type:'Lesson'},
+      {icon:'📖',name:'Arrays & Objects',type:'Lesson'},
+      {icon:'📝',name:'Assignment 1 — Functions',type:'Assignment'},
+      {icon:'📖',name:'DOM Manipulation',type:'Lesson'},
+      {icon:'📖',name:'Events',type:'Lesson'},
+      {icon:'📝',name:'Assignment 2 — DOM',type:'Assignment'},
+      {icon:'📖',name:'Fetch API & Promises',type:'Lesson'},
+      {icon:'📖',name:'ES6+ Features',type:'Lesson'},
+      {icon:'📝',name:'Assignment 3 — Mini App',type:'Assignment'},
+      {icon:'✅',name:'Final Test',type:'Test'},
+    ],
+    reviews:[
+      {author:'Fatima Nuhu',stars:5,text:'Seun teaches JS in a way that finally makes sense to me!'},
+      {author:'Bello Lawal',stars:5,text:'Best investment I\'ve made. Got a freelance gig after this.'},
+    ],
+    featured:false, newest:true,
+  },
+];
+
+// Tutor-added courses land here too (from localStorage simulation)
+let allCourses = [...COURSES];
+try{const saved=localStorage.getItem('frntcoda_courses');if(saved)allCourses=[...COURSES,...JSON.parse(saved)];}catch(e){}
+
+// ── RENDER ──
+let activeFilter='all';
+let activeSort='popular';
+let activeSearch='';
+
+function langTagClass(lang){return lang==='HTML'?'tag-html':lang==='CSS'?'tag-css':'tag-js';}
+function bannerClass(lang){return lang==='HTML'?'html-bg':lang==='CSS'?'css-bg':'js-bg';}
+
+function renderCourses(){
+  let list=[...allCourses];
+  // filter
+  if(activeFilter!=='all')list=list.filter(c=>c.lang===activeFilter);
+  // search
+  if(activeSearch)list=list.filter(c=>
+    c.title.toLowerCase().includes(activeSearch)||
+    c.tutor.toLowerCase().includes(activeSearch)||
+    c.lang.toLowerCase().includes(activeSearch)
+  );
+  // sort
+  if(activeSort==='popular')list.sort((a,b)=>b.students-a.students);
+  else if(activeSort==='newest')list.sort((a,b)=>(b.newest?1:0)-(a.newest?1:0));
+  else if(activeSort==='price-low')list.sort((a,b)=>a.price-b.price);
+  else if(activeSort==='price-high')list.sort((a,b)=>b.price-a.price);
+  else if(activeSort==='rating')list.sort((a,b)=>b.rating-a.rating);
+
+  const grid=document.getElementById('courses-grid');
+  const noRes=document.getElementById('no-results');
+  // clear non-empty-state cards
+  grid.querySelectorAll('.course-card').forEach(c=>c.remove());
+  document.getElementById('count-num').textContent=list.length;
+
+  if(list.length===0){noRes.style.display='block';return;}
+  noRes.style.display='none';
+
+  list.forEach((c,i)=>{
+    const card=document.createElement('div');
+    card.className='course-card';
+    card.style.animationDelay=(i*0.07)+'s';
+    card.dataset.id=c.id;
+    card.innerHTML=`
+      <div class="card-banner ${bannerClass(c.lang)}">
+        <div class="card-banner-icon">${c.icon}</div>
+        <div class="card-banner-tag ${langTagClass(c.lang)}">${c.lang}</div>
+        <div class="card-banner-rating">★ ${c.rating}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-tutor-row">
+          <div class="card-tutor-av">${c.tutorInitials}</div>
+          <div class="card-tutor-name">${c.tutor}</div>
+        </div>
+        <div class="card-title">${c.title}</div>
+        <div class="card-desc">${c.desc.slice(0,100)}…</div>
+        <div class="card-meta">
+          <div class="card-meta-item">📚 <strong>${c.lessons}</strong> Lessons</div>
+          <div class="card-meta-item">📝 <strong>${c.assignments}</strong> Assignments</div>
+          <div class="card-meta-item">🎓 <strong>${c.students}</strong> Students</div>
+          <div class="card-meta-item">⏱ <strong>${c.duration}</strong></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-price"><span class="naira">₦</span>${c.price.toLocaleString()}</div>
+          <div style="display:flex;gap:.5rem;">
+            <button class="preview-btn" onclick="openDetail(${c.id})">Preview</button>
+            <button class="enroll-btn" onclick="openLoginGate(${c.id})">Enroll →</button>
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  hookCursor();
+}
+
+function setFilter(f,btn){
+  activeFilter=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active','red'));
+  btn.classList.add('active');
+  if(f!=='all')btn.classList.add('red');
+  renderCourses();
+}
+function filterCourses(){activeSearch=document.getElementById('search-input').value.toLowerCase();renderCourses();}
+function sortCourses(v){activeSort=v;renderCourses();}
+
+// ── MODALS ──
+function openLoginGate(id){
+  const c=allCourses.find(x=>x.id===id);
+  if(!c)return;
+  document.getElementById('modal-icon').textContent=c.icon;
+  document.getElementById('modal-course-title').textContent=c.title;
+  document.getElementById('modal-course-sub').textContent='by '+c.tutor+' · ₦'+c.price.toLocaleString();
+  document.getElementById('login-modal').classList.add('open');
+}
+function openDetail(id){
+  const c=allCourses.find(x=>x.id===id);
+  if(!c)return;
+  const outlineHTML=c.outline.map((o,i)=>`
+    <div class="outline-item">
+      <div class="num">${i+1}</div>
+      <div class="icon">${o.icon}</div>
+      <div class="name">${o.name}</div>
+      <div class="locked">${i<3?'Free Preview':'🔒 Login'}</div>
+    </div>`).join('');
+  const reviewsHTML=c.reviews.map(r=>`
+    <div class="review-item">
+      <div class="review-header"><div class="review-author">${r.author}</div><div class="review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div></div>
+      <div class="review-text">${r.text}</div>
+    </div>`).join('');
+  document.getElementById('detail-content').innerHTML=`
+    <div class="detail-banner ${bannerClass(c.lang)}">
+      <div style="font-size:4rem;opacity:.5;">${c.icon}</div>
+      <div class="card-banner-tag ${langTagClass(c.lang)}" style="position:absolute;top:1rem;left:1rem;">${c.lang}</div>
+      <div class="card-banner-rating" style="position:absolute;top:1rem;right:3.5rem;">★ ${c.rating} · ${c.students} students</div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-title">${c.title}</div>
+      <div class="detail-tutor">👨‍🏫 ${c.tutor} · ${c.duration}</div>
+      <div class="detail-stats">
+        <div class="detail-stat"><div class="detail-stat-val">${c.lessons}</div><div class="detail-stat-label">Lessons</div></div>
+        <div class="detail-stat"><div class="detail-stat-val">${c.assignments}</div><div class="detail-stat-label">Assignments</div></div>
+        <div class="detail-stat"><div class="detail-stat-val">${c.students}</div><div class="detail-stat-label">Students</div></div>
+        <div class="detail-stat"><div class="detail-stat-val">${c.rating}★</div><div class="detail-stat-label">Rating</div></div>
+      </div>
+      <div class="detail-desc">${c.desc}</div>
+      <div class="detail-outline">
+        <div class="detail-outline-title">Course Outline (${c.outline.length} items)</div>
+        ${outlineHTML}
+      </div>
+      <div class="reviews-section">
+        <div style="font-family:var(--display);font-size:.95rem;font-weight:700;margin-bottom:.85rem;">Student Reviews</div>
+        ${reviewsHTML}
+      </div>
+      <div class="detail-footer">
+        <div>
+          <div class="detail-price"><span class="naira">₦</span>${c.price.toLocaleString()}</div>
+          <div class="cert-fee-note">+ ₦${c.certFee.toLocaleString()} certificate fee (optional)</div>
+        </div>
+        <div style="display:flex;gap:.75rem;">
+          <button class="preview-btn" onclick="closeModal('detail-modal')">Close</button>
+          <button class="enroll-btn" onclick="closeModal('detail-modal');openLoginGate(${c.id})">Enroll Now →</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('detail-modal').classList.add('open');
+  hookCursor();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ── INIT ──
+renderCourses();
+hookCursor();
+
+// ── TUTOR COURSE INJECTION ──
+// When a tutor publishes a course from their dashboard, it's saved to localStorage.
+// This page reads that and adds it to the grid automatically.
+window.addEventListener('storage',()=>{
+  try{const saved=localStorage.getItem('frntcoda_courses');if(saved){allCourses=[...COURSES,...JSON.parse(saved)];renderCourses();}}catch(e){}
+});
+function toggleMobileNav(){
+  document.getElementById('mobile-nav').classList.toggle('open');
+  document.getElementById('hamburger').classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  const nav=document.getElementById('mobile-nav');
+  const btn=document.getElementById('hamburger');
+  if(nav.classList.contains('open')&&!nav.contains(e.target)&&!btn.contains(e.target))
+    {nav.classList.remove('open');btn.classList.remove('open');}
+});
+</script>
+</body>
+</html>
