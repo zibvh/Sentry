@@ -52,6 +52,26 @@ app.post("/api/connect", async (req, res) => {
   bot.start().catch(console.error);
 });
 
+// Connect using session ID string
+app.post("/api/connect-session", async (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId) return res.status(400).json({ error: "Session ID required" });
+
+  try {
+    const loaded = await bot.loadSessionAuth(sessionId);
+    if (!loaded) return res.status(400).json({ error: "Invalid session ID" });
+
+    // Save session ID to config for future restarts
+    bot.updateConfig({ sessionId });
+    res.json({ success: true });
+
+    // Start bot in background
+    bot.start().catch(console.error);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.delete("/api/media/:id", (req, res) => {
   const idx = bot.savedMedia.findIndex((m) => m.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Not found" });

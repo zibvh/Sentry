@@ -832,9 +832,26 @@
       </div>
 
       <div class="connect-wrap">
-        <div class="card" id="connect-card">
-          <div class="card-title">📲 Phone Number Pairing</div>
-          <div class="card-sub">Enter your WhatsApp phone number with country code. You'll get an 8-digit code to enter in WhatsApp.</div>
+
+        <!-- ── METHOD 1: Session ID (recommended) ── -->
+        <div class="card" id="session-card">
+          <div class="card-title">🔑 Session ID Login <span style="font-size:10px;background:rgba(0,255,170,0.15);color:var(--green);padding:2px 8px;border-radius:100px;font-weight:700;margin-left:6px">RECOMMENDED</span></div>
+          <div class="card-sub">Run <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:12px">node pair.js</code> on your phone or local machine to generate a session ID. Paste it here — no pairing needed on Render.</div>
+
+          <div class="input-group">
+            <div class="input-label">Session ID</div>
+            <textarea class="input-field" id="session-input" rows="3" placeholder="Paste your session ID here..." style="resize:vertical;font-family:monospace;font-size:12px;line-height:1.5"></textarea>
+          </div>
+
+          <button class="btn btn-primary" id="session-btn" onclick="connectSession()">
+            Connect with Session ID
+          </button>
+        </div>
+
+        <!-- ── METHOD 2: Pairing Code ── -->
+        <div class="card" id="connect-card" style="margin-top:0">
+          <div class="card-title">📲 Pairing Code <span style="font-size:10px;background:rgba(90,122,153,0.2);color:var(--muted);padding:2px 8px;border-radius:100px;font-weight:700;margin-left:6px">ALTERNATIVE</span></div>
+          <div class="card-sub">Enter your WhatsApp phone number. May not work on cloud servers — use Session ID above if this fails.</div>
 
           <div class="input-group">
             <div class="input-label">Phone Number</div>
@@ -1000,6 +1017,34 @@
   }
 
   // ── Connect ────────────────────────────────────────────────────────────
+  async function connectSession() {
+    const sessionId = document.getElementById('session-input').value.trim();
+    if (!sessionId) return toast('Paste your session ID first', 'err');
+    const btn = document.getElementById('session-btn');
+    btn.disabled = true;
+    btn.textContent = 'Connecting...';
+    try {
+      const r = await fetch('/api/connect-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        toast('✅ Session loaded! Connecting...', 'ok');
+        document.getElementById('session-input').value = '';
+      } else {
+        toast(d.error || 'Failed', 'err');
+        btn.disabled = false;
+        btn.textContent = 'Connect with Session ID';
+      }
+    } catch {
+      toast('Network error', 'err');
+      btn.disabled = false;
+      btn.textContent = 'Connect with Session ID';
+    }
+  }
+
   async function connectPhone() {
     const phone = document.getElementById('phone-input').value.trim();
     if (!phone) return toast('Enter your phone number', 'err');

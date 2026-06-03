@@ -6,7 +6,8 @@ const {
   makeCacheableSignalKeyStore,
   isJidGroup,
   Browsers,
-  // proto is NOT needed — removed dead import
+  BufferJSON,
+  initAuthCreds,
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const path = require("path");
@@ -61,19 +62,53 @@ class WhatsAppBot extends EventEmitter {
     fs.writeFileSync(cfgPath, JSON.stringify(this.config, null, 2));
   }
 
+  // Load auth state from session ID string (base64 encoded auth files)
+  async loadSessionAuth(sessionId) {
+    const authPath = path.join(__dirname, "../auth_info");
+    await fs.ensureDir(authPath);
+
+    try {
+      const sessionData = JSON.parse(
+        Buffer.from(sessionId, "base64").toString("utf8"),
+        BufferJSON.reviver
+      );
+
+      // Write each auth file back to disk
+      for (const [filename, data] of Object.entries(sessionData)) {
+        const filePath = path.join(authPath, filename);
+        await fs.writeFile(filePath, JSON.stringify(data, BufferJSON.replacer));
+      }
+      console.log("✅ Session ID loaded into auth_info");
+      return true;
+    } catch (e) {
+      console.error("❌ Failed to load session ID:", e.message);
+      return false;
+    }
+  }
+
   async start() {
     // Prevent concurrent starts (e.g. auto-start + /api/connect racing)
     if (this.isStarting) return;
     this.isStarting = true;
 
     try {
+      // If a session ID is configured, load it into auth_info first
+      if (this.config.sessionId) {
+        const authPath = path.join(__dirname, "../auth_info");
+        const credsExist = await fs.pathExists(path.join(authPath, "creds.json"));
+        if (!credsExist) {
+          await this.loadSessionAuth(this.config.sessionId);
+        }
+      }
+
       const { state, saveCreds } = await useMultiFileAuthState(
         path.join(__dirname, "../auth_info")
       );
       // DO NOT use fetchLatestBaileysVersion — causes incompatibility per docs
       const logger = pino({ level: "silent" });
 
-      const phoneNumber = this.config.phoneNumber;
+      // Only use pairing code if no session and no existing creds
+      const phoneNumber = !state.creds.registered ? this.config.phoneNumber : null;
 
       this.sock = makeWASocket({
         logger,
