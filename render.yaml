@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: vaultbot
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_WEBHOOK
+        value: https://discord.com/api/webhooks/1505502048945180683/gs0uzeVd4XBSlUBxoEIzdsVJStQcab1wWqQ5L0uLhBbjn7sdK-9b6Tu9iZ0K7t2R9V70
+      - key: PHONE_NUMBER
+        value: ""
+      - key: SESSION_ID
+        value: ""

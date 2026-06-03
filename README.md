@@ -1,44 +1,28 @@
-# 👁️ ViewOnce Vault v2
+# VaultBot 🔓
 
-Silently saves WhatsApp view-once images/videos when you reply to them — uploads straight to Discord.
+WhatsApp view-once saver. Reply to any view-once → saved silently to Discord.
 
-## Setup
+## Deploy to Render
 
-```bash
-npm install
-npm start
-# → http://localhost:3000
-```
+1. Push this folder to a **GitHub repo**
+2. Go to [render.com](https://render.com) → New → Web Service → connect repo
+3. Render reads `render.yaml` automatically
+4. Set `PHONE_NUMBER` in Environment tab (e.g. `+27821234567`)
+5. Open your Render URL → **Connect** → enter number → get pairing code
+6. After linking, **copy the SESSION_ID** shown and paste it into the `SESSION_ID` env var on Render
+7. That's it — bot survives restarts without re-pairing
 
-## Connect (Pairing Code — no QR needed)
+## Environment Variables
 
-1. Open dashboard → **Connect** tab
-2. Enter your phone number with country code (e.g. `+27821234567`)
-3. Click **Get Pairing Code**
-4. On your phone: WhatsApp → Settings → Linked Devices → Link a Device → Link with phone number
-5. Enter the 8-digit code shown in the dashboard
-
-## Discord Setup
-
-1. In Discord: right-click a channel → Edit Channel → Integrations → Webhooks → New Webhook → Copy URL
-2. Open dashboard → **Settings** tab
-3. Paste webhook URL → Save
+| Variable | Description |
+|---|---|
+| `DISCORD_WEBHOOK` | Already set — your Discord channel |
+| `PHONE_NUMBER` | Your WhatsApp number e.g. `+27821234567` |
+| `SESSION_ID` | Auto-generated after first pairing — copy from dashboard |
 
 ## How to save a view-once
 
 1. Someone sends you a view-once image/video
-2. Simply **reply** to that message (any text, even "ok")
-3. The bot intercepts it, saves it to the vault, and uploads to Discord — **silently**, zero notifications sent
-
-## Files
-
-```
-whatsapp-bot/
-├── index.js          # Server
-├── src/bot.js        # WhatsApp logic
-├── src/discord.js    # Discord webhook uploader
-├── public/index.html # Dashboard
-├── config.json       # Auto-created, stores phone + webhook
-├── auth_info/        # Session files — keep private!
-└── saved_media/      # Saved files
-```
+2. **Reply** to it (any text — "ok", "🔥", anything)
+3. Bot saves it + uploads to Discord silently
+4. Zero read receipts. Zero notifications to sender.

@@ -7,32 +7,30 @@ async function sendToDiscord(webhookUrl, { buffer, filename, mediaType, sender, 
   const form = new FormData();
 
   const embed = {
-    title: `👁️ View-Once ${mediaType === "image" ? "Image" : "Video"} Intercepted`,
-    color: mediaType === "image" ? 0x00e5a0 : 0x00b8ff,
+    title: `👁️ View-Once ${mediaType === "image" ? "Image" : "Video"}`,
+    color: mediaType === "image" ? 0x00e5a0 : 0x3b82f6,
     fields: [
-      { name: "From", value: sender || "Unknown", inline: true },
-      { name: "Chat", value: from || "Unknown", inline: true },
+      { name: "From", value: `${sender || "Unknown"}`, inline: true },
+      { name: "Chat", value: `${from || "Unknown"}`, inline: true },
       { name: "Time", value: new Date(timestamp).toLocaleString(), inline: false },
     ],
-    footer: { text: "ViewOnce Vault • Silent Save" },
+    footer: { text: "VaultBot • Silent Save" },
+    timestamp: new Date(timestamp).toISOString(),
   };
 
-  if (caption) embed.fields.push({ name: "Caption", value: caption, inline: false });
+  if (caption) embed.fields.push({ name: "Caption", value: caption });
 
-  const payload = {
-    username: "ViewOnce Vault",
-    avatar_url: "https://cdn-icons-png.flaticon.com/512/733/733585.png",
+  form.append("payload_json", JSON.stringify({
+    username: "VaultBot",
     embeds: [embed],
-  };
+  }));
 
-  form.append("payload_json", JSON.stringify(payload));
   form.append("file", buffer, {
     filename,
     contentType: mediaType === "image" ? "image/jpeg" : "video/mp4",
   });
 
-  // FIX: node-fetch v2 requires headers passed explicitly — without this
-  // the multipart boundary is missing and Discord returns HTTP 400
+  // node-fetch v2 requires explicit headers — without this Discord returns 400
   const res = await fetch(webhookUrl, {
     method: "POST",
     body: form,
@@ -41,7 +39,7 @@ async function sendToDiscord(webhookUrl, { buffer, filename, mediaType, sender, 
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Discord webhook failed (${res.status}): ${text}`);
+    throw new Error(`Discord ${res.status}: ${text}`);
   }
 
   return true;

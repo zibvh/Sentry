@@ -3,52 +3,45 @@ const {
   useMultiFileAuthState,
   downloadMediaMessage,
   DisconnectReason,
+  fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   isJidGroup,
-  Browsers,
-  BufferJSON,
-  initAuthCreds,
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const path = require("path");
 const fs = require("fs-extra");
+const os = require("os");
 const EventEmitter = require("events");
 const { sendToDiscord } = require("./discord");
+const { getAuthDir, exportSessionId } = require("./session");
 
-class WhatsAppBot extends EventEmitter {
-  constructor(savePath, io, config = {}) {
+const SAVE_PATH = path.join(os.tmpdir(), "vaultbot_media");
+
+class VaultBot extends EventEmitter {
+  constructor(io, config = {}) {
     super();
-    this.savePath = savePath;
     this.io = io;
     this.config = config;
     this.sock = null;
     this.savedMedia = [];
     this.status = "disconnected";
     this.pairingCode = null;
-    this.connectionInfo = null;
-    this.isStarting = false; // guard against concurrent start() calls
+    this.user = null;
+    this.isStarting = false;
+    this.pendingViewOnce = new Map(); // msgId → media data
 
-    // key: message id → stored view-once data, waiting for a reply
-    this.pendingViewOnce = new Map();
-
-    fs.ensureDirSync(savePath);
-    this.loadSavedMedia();
+    fs.ensureDirSync(SAVE_PATH);
+    this._loadIndex();
   }
 
-  loadSavedMedia() {
-    const indexFile = path.join(this.savePath, "index.json");
-    if (fs.existsSync(indexFile)) {
-      try {
-        this.savedMedia = JSON.parse(fs.readFileSync(indexFile, "utf8"));
-      } catch {
-        this.savedMedia = [];
-      }
-    }
+  _loadIndex() {
+    const f = path.join(SAVE_PATH, "index.json");
+    try { this.savedMedia = fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : []; }
+    catch { this.savedMedia = []; }
   }
 
-  saveMediaIndex() {
-    const indexFile = path.join(this.savePath, "index.json");
-    fs.writeFileSync(indexFile, JSON.stringify(this.savedMedia, null, 2));
+  _saveIndex() {
+    fs.writeFileSync(path.join(SAVE_PATH, "index.json"), JSON.stringify(this.savedMedia, null, 2));
   }
 
   setStatus(status, extra = {}) {
@@ -56,70 +49,35 @@ class WhatsAppBot extends EventEmitter {
     this.io.emit("status", { status, ...extra });
   }
 
-  updateConfig(config) {
-    this.config = { ...this.config, ...config };
-    const cfgPath = path.join(__dirname, "../config.json");
-    fs.writeFileSync(cfgPath, JSON.stringify(this.config, null, 2));
-  }
-
-  // Load auth state from session ID string (base64 encoded auth files)
-  async loadSessionAuth(sessionId) {
-    const authPath = path.join(__dirname, "../auth_info");
-    await fs.ensureDir(authPath);
-
-    try {
-      const sessionData = JSON.parse(
-        Buffer.from(sessionId, "base64").toString("utf8"),
-        BufferJSON.reviver
-      );
-
-      // Write each auth file back to disk
-      for (const [filename, data] of Object.entries(sessionData)) {
-        const filePath = path.join(authPath, filename);
-        await fs.writeFile(filePath, JSON.stringify(data, BufferJSON.replacer));
-      }
-      console.log("✅ Session ID loaded into auth_info");
-      return true;
-    } catch (e) {
-      console.error("❌ Failed to load session ID:", e.message);
-      return false;
-    }
+  updateConfig(cfg) {
+    this.config = { ...this.config, ...cfg };
   }
 
   async start() {
-    // Prevent concurrent starts (e.g. auto-start + /api/connect racing)
     if (this.isStarting) return;
     this.isStarting = true;
 
     try {
-      // If a session ID is configured, load it into auth_info first
-      if (this.config.sessionId) {
-        const authPath = path.join(__dirname, "../auth_info");
-        const credsExist = await fs.pathExists(path.join(authPath, "creds.json"));
-        if (!credsExist) {
-          await this.loadSessionAuth(this.config.sessionId);
-        }
-      }
+      const authDir = getAuthDir();
+      await fs.ensureDir(authDir);
 
-      const { state, saveCreds } = await useMultiFileAuthState(
-        path.join(__dirname, "../auth_info")
-      );
-      // DO NOT use fetchLatestBaileysVersion — causes incompatibility per docs
+      const { state, saveCreds } = await useMultiFileAuthState(authDir);
+      const { version } = await fetchLatestBaileysVersion();
       const logger = pino({ level: "silent" });
 
-      // Only use pairing code if no session and no existing creds
-      const phoneNumber = !state.creds.registered ? this.config.phoneNumber : null;
+      const phoneNumber = this.config.phoneNumber;
+      const needsPairing = phoneNumber && !state.creds.registered;
 
       this.sock = makeWASocket({
+        version,
         logger,
         auth: {
           creds: state.creds,
           keys: makeCacheableSignalKeyStore(state.keys, logger),
         },
         printQRInTerminal: false,
-        // Browsers.macOS("Google Chrome") is REQUIRED for pairing code per docs
-        browser: Browsers.macOS("Google Chrome"),
-        markOnlineOnConnect: false,
+        ...(needsPairing ? { pairPhoneNumber: true } : {}),
+        browser: ["VaultBot", "Chrome", "120.0"],
         getMessage: async (key) => {
           const stored = this.pendingViewOnce.get(key.id);
           if (stored) return stored.viewOnceMsg;
@@ -127,56 +85,66 @@ class WhatsAppBot extends EventEmitter {
         },
       });
 
-      // Track if pairing code has been requested to avoid duplicate requests
-      let pairingRequested = false;
+      // Request pairing code — wait for socket handshake first
+      if (needsPairing) {
+        await new Promise((resolve) => {
+          const h = ({ connection }) => {
+            if (connection === "connecting" || connection === "open") {
+              this.sock.ev.off("connection.update", h);
+              resolve();
+            }
+          };
+          this.sock.ev.on("connection.update", h);
+          setTimeout(resolve, 5000);
+        });
+        await new Promise((r) => setTimeout(r, 1500));
 
-      this.sock.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-
-        // Request pairing code when QR is available — means handshake is complete
-        if (phoneNumber && !state.creds.registered && !pairingRequested && !!qr) {
-          pairingRequested = true;
-          // Small buffer to ensure socket is fully ready
-          await new Promise(r => setTimeout(r, 500));
-          try {
-            const digits = phoneNumber.replace(/\D/g, "");
-            const rawCode = await this.sock.requestPairingCode(digits);
-            const formatted = rawCode?.match(/.{1,4}/g)?.join("-") || rawCode;
-            this.pairingCode = formatted;
-            this.setStatus("pairing", { code: formatted });
-            console.log(`\n📱 Pairing Code: ${formatted}`);
-            console.log("WhatsApp → Settings → Linked Devices → Link with phone number\n");
-          } catch (e) {
-            console.error("Pairing code error:", e.message);
-            this.setStatus("error", { message: e.message });
-          }
+        try {
+          const digits = phoneNumber.replace(/\D/g, "");
+          const rawCode = await this.sock.requestPairingCode(digits);
+          const formatted = rawCode?.match(/.{1,4}/g)?.join("-") || rawCode;
+          this.pairingCode = formatted;
+          this.setStatus("pairing", { code: formatted });
+          console.log(`\n📱 Pairing Code: ${formatted}\n`);
+        } catch (e) {
+          console.error("Pairing code error:", e.message);
+          this.setStatus("error", { message: e.message });
         }
+      }
 
+      this.sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
         if (connection === "close") {
-          this.isStarting = false; // allow restart
-          const statusCode = lastDisconnect?.error?.output?.statusCode;
-          const loggedOut = statusCode === DisconnectReason.loggedOut;
-
-          if (loggedOut) {
+          this.isStarting = false;
+          const code = lastDisconnect?.error?.output?.statusCode;
+          if (code === DisconnectReason.loggedOut) {
             this.setStatus("logged_out");
-            await fs.remove(path.join(__dirname, "../auth_info"));
-            console.log("🚪 Logged out — auth cleared.");
+            await fs.remove(getAuthDir());
           } else {
-            // Any other close (428, Connection Closed, etc) — just reconnect, never wipe auth
-            pairingRequested = false;
             this.setStatus("reconnecting");
-            console.log(`🔄 Reconnecting (reason: ${statusCode})...`);
-            setTimeout(() => this.start(), 3000);
+            setTimeout(() => this.start(), 4000);
           }
         }
 
         if (connection === "open") {
           this.isStarting = false;
           this.pairingCode = null;
-          const user = this.sock.user;
-          this.connectionInfo = user;
-          this.setStatus("connected", { user });
-          console.log(`✅ Connected as ${user?.name} (${user?.id})`);
+          this.user = this.sock.user;
+          this.setStatus("connected", { user: this.user });
+          console.log(`✅ Connected as ${this.user?.name}`);
+
+          // Export and log the session ID so user can save it
+          const sid = await exportSessionId();
+          if (sid) {
+            console.log("\n╔══════════════════════════════════════════╗");
+            console.log("║  COPY YOUR SESSION_ID (save in Render)   ║");
+            console.log("╠══════════════════════════════════════════╣");
+            console.log(`║  ${sid.substring(0, 40)}...  ║`);
+            console.log("╚══════════════════════════════════════════╝");
+            console.log("\nFull SESSION_ID:");
+            console.log(sid);
+            console.log("\nPaste this as SESSION_ID env var in Render.\n");
+            this.io.emit("session_id", { sessionId: sid });
+          }
         }
       });
 
@@ -184,166 +152,124 @@ class WhatsAppBot extends EventEmitter {
 
       this.sock.ev.on("messages.upsert", async ({ messages, type }) => {
         if (type !== "notify") return;
-        for (const msg of messages) {
-          await this.handleMessage(msg);
-        }
+        for (const msg of messages) await this._handleMessage(msg);
       });
 
     } catch (err) {
       this.isStarting = false;
-      console.error("start() error:", err.message);
+      console.error("Bot start error:", err.message);
       this.setStatus("error", { message: err.message });
     }
   }
 
-  async handleMessage(msg) {
+  async _handleMessage(msg) {
     if (!msg.message) return;
 
-    const msgContent = msg.message;
+    const content = msg.message;
     const from = msg.key.remoteJid;
     const pushName = msg.pushName || "Unknown";
     const isGroup = isJidGroup(from);
     const timestamp = new Date(msg.messageTimestamp * 1000);
     const msgId = msg.key.id;
 
-    // ── 1. Detect incoming view-once messages ─────────────────────────────
-    // WhatsApp uses three different wrapper types depending on client version
+    // ── Detect view-once messages ─────────────────────────────────────────
     const viewOnceMsg =
-      msgContent?.viewOnceMessageV2?.message ||
-      msgContent?.viewOnceMessageV2Extension?.message ||
-      msgContent?.viewOnceMessage?.message;
+      content?.viewOnceMessageV2?.message ||
+      content?.viewOnceMessageV2Extension?.message ||
+      content?.viewOnceMessage?.message;
 
     if (viewOnceMsg) {
       const imageMsg = viewOnceMsg.imageMessage;
       const videoMsg = viewOnceMsg.videoMessage;
-
       if (imageMsg || videoMsg) {
-        console.log(`👁️  View-once ${imageMsg ? "image" : "video"} from ${pushName} — waiting for reply`);
-
-        this.pendingViewOnce.set(msgId, {
-          msg,
-          viewOnceMsg,
-          imageMsg,
-          videoMsg,
-          from,
-          pushName,
-          isGroup,
-          timestamp,
-        });
-
-        // WhatsApp view-once media expires — clean up after 5 minutes
+        console.log(`👁️  View-once ${imageMsg ? "image" : "video"} from ${pushName}`);
+        this.pendingViewOnce.set(msgId, { msg, viewOnceMsg, imageMsg, videoMsg, from, pushName, isGroup, timestamp });
         setTimeout(() => this.pendingViewOnce.delete(msgId), 5 * 60 * 1000);
-
-        this.io.emit("viewonce_received", {
-          id: msgId,
-          from,
-          pushName,
-          mediaType: imageMsg ? "image" : "video",
-          timestamp: timestamp.toISOString(),
-        });
+        this.io.emit("viewonce_pending", { id: msgId, pushName, mediaType: imageMsg ? "image" : "video", timestamp: timestamp.toISOString() });
         return;
       }
     }
 
-    // ── 2. Detect replies — check all message types that can carry contextInfo ──
-    const contextInfo =
-      msgContent?.extendedTextMessage?.contextInfo ||
-      msgContent?.imageMessage?.contextInfo ||
-      msgContent?.videoMessage?.contextInfo ||
-      msgContent?.stickerMessage?.contextInfo ||
-      msgContent?.audioMessage?.contextInfo ||
-      // Fallback: scan all top-level message fields for contextInfo
-      Object.values(msgContent || {}).find((v) => v?.contextInfo)?.contextInfo;
+    // ── Detect reply to view-once → trigger save ──────────────────────────
+    const ctxInfo =
+      content?.extendedTextMessage?.contextInfo ||
+      content?.imageMessage?.contextInfo ||
+      content?.videoMessage?.contextInfo ||
+      content?.stickerMessage?.contextInfo ||
+      content?.audioMessage?.contextInfo ||
+      Object.values(content || {}).find((v) => v?.contextInfo)?.contextInfo;
 
-    const quotedId = contextInfo?.stanzaId;
-
+    const quotedId = ctxInfo?.stanzaId;
     if (quotedId && this.pendingViewOnce.has(quotedId)) {
-      console.log(`💬 Reply to view-once detected — saving silently...`);
       const stored = this.pendingViewOnce.get(quotedId);
-      this.pendingViewOnce.delete(quotedId); // consume it — don't save twice
-      await this.saveViewOnce(stored);
+      this.pendingViewOnce.delete(quotedId);
+      await this._saveViewOnce(stored);
     }
   }
 
-  async saveViewOnce({ msg, viewOnceMsg, imageMsg, videoMsg, from, pushName, isGroup, timestamp }) {
+  async _saveViewOnce({ msg, viewOnceMsg, imageMsg, videoMsg, from, pushName, isGroup, timestamp }) {
     const mediaType = imageMsg ? "image" : "video";
     const ext = imageMsg ? "jpg" : "mp4";
 
     try {
-      // downloadMediaMessage needs the message field to be the unwrapped content
-      const reconstructedMsg = { ...msg, message: viewOnceMsg };
-
+      const reconstructed = { ...msg, message: viewOnceMsg };
       const buffer = await downloadMediaMessage(
-        reconstructedMsg,
-        "buffer",
-        {},
-        {
-          // ctx param — logger + reuploadRequest for expired media
-          logger: pino({ level: "silent" }),
-          reuploadRequest: this.sock.updateMediaMessage,
-        }
+        reconstructed, "buffer", {},
+        { logger: pino({ level: "silent" }), reuploadRequest: this.sock.updateMediaMessage }
       );
 
-      if (!buffer || buffer.length === 0) {
-        throw new Error("Downloaded buffer is empty — media may have expired");
-      }
+      if (!buffer || buffer.length === 0) throw new Error("Empty buffer — media may have expired");
 
       const filename = `${Date.now()}_${mediaType}.${ext}`;
-      const filepath = path.join(this.savePath, filename);
+      const filepath = path.join(SAVE_PATH, filename);
       await fs.writeFile(filepath, buffer);
 
       const entry = {
         id: Date.now().toString(),
-        filename,
-        filepath,
-        mediaType,
-        from,
-        pushName,
-        isGroup,
+        filename, filepath, mediaType, from, pushName, isGroup,
         timestamp: timestamp.toISOString(),
         size: buffer.length,
         caption: imageMsg?.caption || videoMsg?.caption || "",
         discordSent: false,
       };
 
-      // ── Discord upload ─────────────────────────────────────────────────
       if (this.config.discordWebhook) {
         try {
           await sendToDiscord(this.config.discordWebhook, {
-            buffer,
-            filename,
-            mediaType,
-            sender: pushName,
-            from,
+            buffer, filename, mediaType,
+            sender: pushName, from,
             caption: entry.caption,
             timestamp: entry.timestamp,
           });
           entry.discordSent = true;
           console.log(`📤 Sent to Discord`);
-        } catch (discordErr) {
-          console.error(`⚠️  Discord upload failed: ${discordErr.message}`);
-          this.io.emit("discord_error", { message: discordErr.message });
+        } catch (e) {
+          console.error(`⚠️  Discord failed: ${e.message}`);
+          this.io.emit("discord_error", { message: e.message });
         }
       }
 
       this.savedMedia.unshift(entry);
-      this.saveMediaIndex();
+      this._saveIndex();
       this.io.emit("new_media", entry);
-      console.log(`✅ Saved: ${filename} (${(buffer.length / 1024).toFixed(1)} KB)`);
+      console.log(`✅ Saved: ${filename} (${(buffer.length / 1024).toFixed(1)}KB)`);
 
     } catch (err) {
-      console.error(`❌ Failed to save:`, err.message);
-      this.io.emit("error", { message: `Save failed: ${err.message}` });
+      console.error(`❌ Save failed: ${err.message}`);
+      this.io.emit("error", { message: err.message });
     }
   }
 
+  getStatus() { return { status: this.status, code: this.pairingCode, user: this.user }; }
   getSavedMedia() { return this.savedMedia; }
-  getStatus() { return { status: this.status, code: this.pairingCode, user: this.connectionInfo }; }
-  getConfig() { return { discordWebhook: this.config.discordWebhook ? "••••••••" : "", phoneNumber: this.config.phoneNumber || "" }; }
+  getConfig() { return { discordWebhook: this.config.discordWebhook ? "set" : "", phoneNumber: this.config.phoneNumber || "" }; }
 
   async logout() {
-    if (this.sock) await this.sock.logout();
+    if (this.sock) {
+      await this.sock.logout().catch(() => {});
+      await fs.remove(getAuthDir()).catch(() => {});
+    }
   }
 }
 
-module.exports = WhatsAppBot;
+module.exports = VaultBot;
