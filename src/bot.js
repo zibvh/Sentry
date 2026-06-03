@@ -6,6 +6,7 @@ const {
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   isJidGroup,
+  Browsers,
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const path = require("path");
@@ -76,8 +77,9 @@ class VaultBot extends EventEmitter {
           keys: makeCacheableSignalKeyStore(state.keys, logger),
         },
         printQRInTerminal: false,
-        ...(needsPairing ? { pairPhoneNumber: true } : {}),
-        browser: ["VaultBot", "Chrome", "120.0"],
+        // Use the correct Browsers helper - this sets the right platform ID
+        // that WhatsApp uses to decide how to handle the pairing request
+        browser: Browsers.ubuntu("Chrome"),
         getMessage: async (key) => {
           const stored = this.pendingViewOnce.get(key.id);
           if (stored) return stored.viewOnceMsg;
@@ -85,19 +87,15 @@ class VaultBot extends EventEmitter {
         },
       });
 
-      // Request pairing code — wait for socket handshake first
+      // Request pairing code ONLY after the noise WebSocket handshake completes.
+      // "connecting" fires via process.nextTick BEFORE the WS even opens — too early.
+      // We must wait for the server to send its first binary node (the noise handshake IQ).
+      // The safest signal is a fixed delay after makeWASocket returns, giving the WS
+      // time to open and exchange the hello frames (~2-3s on good connections).
       if (needsPairing) {
-        await new Promise((resolve) => {
-          const h = ({ connection }) => {
-            if (connection === "connecting" || connection === "open") {
-              this.sock.ev.off("connection.update", h);
-              resolve();
-            }
-          };
-          this.sock.ev.on("connection.update", h);
-          setTimeout(resolve, 5000);
-        });
-        await new Promise((r) => setTimeout(r, 1500));
+        // Wait for WS to physically open - socket.js fires 'connecting' synchronously
+        // but the actual TCP+noise handshake takes ~2s
+        await new Promise((r) => setTimeout(r, 3000));
 
         try {
           const digits = phoneNumber.replace(/\D/g, "");
