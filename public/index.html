@@ -133,14 +133,70 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .set-sec{margin-bottom:28px}
 .set-sec-t{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--border)}
 
+/* ── Mobile bottom nav ── */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--border);z-index:100;padding:8px 0 max(8px,env(safe-area-inset-bottom))}
+.mob-nav-inner{display:flex;justify-content:space-around}
+.mni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 20px;cursor:pointer;border-radius:10px;transition:.15s;position:relative}
+.mni.active .mni-icon{filter:drop-shadow(0 0 6px var(--green))}
+.mni-icon{font-size:22px;transition:.15s}
+.mni.active .mni-icon{transform:scale(1.15)}
+.mni-label{font-size:10px;font-weight:600;color:var(--muted);transition:.15s}
+.mni.active .mni-label{color:var(--green)}
+.mni-dot{position:absolute;top:4px;right:14px;width:7px;height:7px;border-radius:50%;background:var(--green);display:none}
+.mni-dot.show{display:block}
+
+/* ── Mobile header ── */
+.mob-header{display:none;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--border);background:var(--s1);position:sticky;top:0;z-index:99}
+.mob-brand{font-size:18px;font-weight:800}
+.mob-brand span{color:var(--green)}
+.mob-status{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted)}
+
 @media(max-width:700px){
-  .sidebar{display:none}.main{padding:20px}
-  .stats{grid-template-columns:1fr 1fr}
-  #media-grid{grid-template-columns:repeat(2,1fr)}
+  body{flex-direction:column}
+  .sidebar{display:none}
+  .mob-header{display:flex}
+  .mob-nav{display:block}
+  .main{padding:16px 16px 90px}
+  .stats{grid-template-columns:1fr 1fr;gap:10px}
+  .stat{padding:14px 16px}
+  .stat-n{font-size:22px}
+  #media-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .pt{font-size:20px}
+  .toolbar{gap:6px}
+  .srch{margin-left:0;width:100%}
+  .srch input{width:100%}
+  .pair-code{font-size:32px;letter-spacing:6px}
+  .connect-wrap{max-width:100%}
+  .set-wrap{max-width:100%}
 }
 </style>
 </head>
 <body>
+<!-- Mobile header -->
+<div class="mob-header">
+  <div class="mob-brand">Vault<span>Bot</span></div>
+  <div class="mob-status"><div class="dot" id="mdot"></div><span id="mstatus">Connecting…</span></div>
+</div>
+
+<!-- Mobile bottom nav -->
+<div class="mob-nav">
+  <div class="mob-nav-inner">
+    <div class="mni active" id="mni-vault" onclick="nav('vault',this,'mni-vault')">
+      <div class="mni-dot" id="mnidot"></div>
+      <div class="mni-icon">🗄️</div>
+      <div class="mni-label">Vault</div>
+    </div>
+    <div class="mni" id="mni-connect" onclick="nav('connect',this,'mni-connect')">
+      <div class="mni-icon">📱</div>
+      <div class="mni-label">Connect</div>
+    </div>
+    <div class="mni" id="mni-settings" onclick="nav('settings',this,'mni-settings')">
+      <div class="mni-icon">⚙️</div>
+      <div class="mni-label">Settings</div>
+    </div>
+  </div>
+</div>
+
 <aside class="sidebar">
   <div class="brand">
     <div class="brand-tag">// bot</div>
@@ -274,6 +330,10 @@ socket.on('new_media', e => {
   media.unshift(e); e._new = true;
   updateStats(); renderGrid();
   toast(`📥 Saved from ${e.pushName}${e.discordSent?' → Discord ✓':''}`, 'ok');
+  // show green dot on mobile vault nav if not already on vault page
+  if(!document.getElementById('page-vault').classList.contains('active')) {
+    document.getElementById('mnidot')?.classList.add('show');
+  }
   setTimeout(()=>{ e._new=false; }, 5000);
 });
 socket.on('media_deleted', ({id}) => { media = media.filter(m=>m.id!==id); updateStats(); renderGrid(); });
@@ -292,6 +352,7 @@ socket.on('session_id', ({sessionId: sid}) => {
 });
 
 function onStatus({status, code, user}) {
+  // Desktop sidebar
   const dot = document.getElementById('sdot');
   const label = document.getElementById('slabel');
   const name = document.getElementById('sname');
@@ -299,6 +360,15 @@ function onStatus({status, code, user}) {
   const labels = {connected:'Connected',pairing:'Awaiting code',disconnected:'Offline',reconnecting:'Reconnecting',waiting:'Ready',logged_out:'Logged out',error:'Error'};
   label.textContent = labels[status] || status;
   name.textContent = user?.name || (status==='pairing'?'Enter code in WA':'—');
+
+  // Mobile header
+  const mdot = document.getElementById('mdot');
+  const mstatus = document.getElementById('mstatus');
+  if(mdot) mdot.className = 'dot ' + status;
+  if(mstatus) mstatus.textContent = user?.name || labels[status] || status;
+
+  // Mobile new media dot
+  const mnidot = document.getElementById('mnidot');
 
   const cc = document.getElementById('card-connect');
   const ccd = document.getElementById('card-connected');
@@ -443,11 +513,18 @@ async function del(id) {
   if(r.ok) toast('🗑️ Deleted','ok'); else toast('Failed','err');
 }
 
-function nav(id, el) {
+function nav(id, el, mobileId) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mni').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
+  // sync sidebar
+  const sidebarItem = [...document.querySelectorAll('.ni')].find(n=>n.textContent.toLowerCase().includes(id));
+  if(sidebarItem) sidebarItem.classList.add('active');
+  // sync mobile
+  if(mobileId) document.getElementById(mobileId)?.classList.add('active');
+  window.scrollTo(0,0);
 }
 
 function toast(msg, type='ok') {
