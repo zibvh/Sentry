@@ -98,9 +98,11 @@ class WhatsAppBot extends EventEmitter {
       this.sock.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
-        // Docs: request on "connecting" OR qr — "connecting" is the reliable trigger
-        if (phoneNumber && !state.creds.registered && !pairingRequested && connection === "connecting") {
+        // Request pairing code when QR is available — means handshake is complete
+        if (phoneNumber && !state.creds.registered && !pairingRequested && !!qr) {
           pairingRequested = true;
+          // Small buffer to ensure socket is fully ready
+          await new Promise(r => setTimeout(r, 500));
           try {
             const digits = phoneNumber.replace(/\D/g, "");
             const rawCode = await this.sock.requestPairingCode(digits);
@@ -124,15 +126,12 @@ class WhatsAppBot extends EventEmitter {
             this.setStatus("logged_out");
             await fs.remove(path.join(__dirname, "../auth_info"));
             console.log("🚪 Logged out — auth cleared.");
-          } else if (statusCode === 428) {
-            // 428 = WhatsApp closed connection during pairing — just retry
-            pairingRequested = false;
-            console.log("🔄 Connection closed during pairing, retrying...");
-            setTimeout(() => this.start(), 3000);
           } else {
+            // Any other close (428, Connection Closed, etc) — just reconnect, never wipe auth
+            pairingRequested = false;
             this.setStatus("reconnecting");
             console.log(`🔄 Reconnecting (reason: ${statusCode})...`);
-            setTimeout(() => this.start(), 4000);
+            setTimeout(() => this.start(), 3000);
           }
         }
 
